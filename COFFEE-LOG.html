@@ -1,0 +1,1592 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>COFFEE LOG | 一杯から世界を旅する</title>
+<meta name="theme-color" content="#f7f3e9">
+<meta name="description" content="一杯から世界を旅する。コーヒーを探し、飲んだ産地をパスポートに記録するアプリ。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     THEME — 産地パスポート。
+     青みのある淡いグレーの紙に、朱と藍のスタンプインク。
+     ============================================================ */
+  :root {
+    --paper: #e7ebee;
+    --paper-2: #dce2e7;
+    --line: #b6c0ca;
+    --ink: #1c2633;
+    --ink-2: #4a5765;
+    --ink-3: #7c8895;
+    --vermilion: #bf3f2a;
+    --indigo: #2c4b82;
+    --cover: #1f3558;
+    --cover-ink: #e8ecf2;
+    --accent-bg: rgba(191, 63, 42, 0.08);
+    --bean-line: rgba(0, 0, 0, 0.45);
+    --font-body: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif;
+    --font-stamp: "Oswald", "Arial Narrow", "Helvetica Neue", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #101824; --paper-2: #182231; --line: #2d3a4c;
+      --ink: #e5e9ef; --ink-2: #a7b2c0; --ink-3: #6d7a8b;
+      --vermilion: #e36b50; --indigo: #87a4dc; --cover: #1a2c4b; --cover-ink: #e8ecf2;
+      --accent-bg: rgba(227, 107, 80, 0.1);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #101824; --paper-2: #182231; --line: #2d3a4c;
+    --ink: #e5e9ef; --ink-2: #a7b2c0; --ink-3: #6d7a8b;
+    --vermilion: #e36b50; --indigo: #87a4dc; --cover: #1a2c4b; --cover-ink: #e8ecf2;
+    --accent-bg: rgba(227, 107, 80, 0.1);
+  }
+  :root {
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); background: var(--paper); }
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--font-body); font-size: 14px; line-height: 1.6;
+    display: flex; justify-content: center;
+    -webkit-font-smoothing: antialiased;
+  }
+  #app { width: 100%; max-width: 440px; padding: 20px 20px 64px; }
+  h1, h2, h3 { margin: 0; font-weight: 700; }
+  button { font-family: inherit; color: inherit; cursor: pointer; background: none; border: none; padding: 0; }
+  button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--indigo); outline-offset: 2px; }
+  .screen { display: flex; flex-direction: column; gap: 22px; }
+
+  /* ---------- top bar ---------- */
+  .topbar { display: flex; align-items: center; gap: 10px; min-height: 36px; }
+  .back-btn { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line); font-size: 18px; display: flex; align-items: center; justify-content: center; }
+  .logo { font-family: var(--font-stamp); font-weight: 500; font-size: 13px; letter-spacing: 0.14em; color: var(--ink-2); padding: 6px 4px; }
+  .page-title { font-size: 20px; }
+  .page-lead { font-size: 12px; color: var(--ink-2); margin-top: -14px; }
+
+  /* ---------- passport cover (home) ---------- */
+  .cover {
+    position: relative; overflow: hidden; border-radius: 6px 14px 14px 6px;
+    background-color: var(--cover); color: var(--cover-ink);
+    background-image:
+      repeating-radial-gradient(circle at 110% -10%, rgba(255,255,255,0.055) 0 1px, transparent 1px 6px),
+      repeating-radial-gradient(circle at -10% 120%, rgba(255,255,255,0.04) 0 1px, transparent 1px 8px);
+    padding: 22px 20px 20px 26px; text-align: left; width: 100%;
+    --stamp-ground: var(--cover);
+  }
+  .cover::before { content: ""; position: absolute; left: 10px; top: 0; bottom: 0; width: 1px; background: rgba(255,255,255,0.18); }
+  .cover-title { font-size: 22px; font-weight: 700; letter-spacing: 0.04em; }
+  .cover-sub { font-size: 12px; opacity: 0.75; margin-top: 2px; }
+  .cover-stamps { display: flex; gap: 10px; margin: 18px 0 14px; min-height: 76px; align-items: center; }
+  .cover-stamps .stamp { width: 76px; color: #f1dccb; }
+  .cover-empty { font-size: 12px; opacity: 0.7; line-height: 1.7; }
+  .cover-foot { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; border-top: 1px dashed rgba(255,255,255,0.25); padding-top: 10px; }
+  .cover-count { font-family: var(--font-stamp); font-size: 15px; letter-spacing: 0.04em; }
+
+  /* ---------- rows / lists ---------- */
+  .rows { display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+  .row { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 14px 2px; border-bottom: 1px dashed var(--line); }
+  .row:hover { background: var(--paper-2); }
+  .row-title { font-size: 15px; font-weight: 500; }
+  .row-sub { font-size: 12px; color: var(--ink-2); margin-top: 1px; }
+  .row-meta { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+  .row-arrow { margin-left: auto; color: var(--ink-3); font-size: 18px; flex-shrink: 0; }
+  .row-body { min-width: 0; }
+  .note { color: var(--ink-2); }
+
+  .stat-line { display: flex; gap: 24px; font-size: 12px; color: var(--ink-2); }
+  .stat-line b { font-family: var(--font-stamp); font-weight: 500; font-size: 20px; color: var(--ink); margin-right: 4px; }
+
+  /* ---------- daily coffee / profile ---------- */
+  .daily-card { border: 1px solid var(--line); border-radius: 12px; padding: 18px; background: var(--paper-2); }
+  .daily-eyebrow { font: 500 12px var(--font-stamp); letter-spacing: .12em; color: var(--vermilion); }
+  .daily-name { font-size: 19px; font-weight: 700; margin: 8px 0 3px; }
+  .daily-reason { font-size: 12px; color: var(--ink-2); margin-bottom: 14px; }
+  .daily-actions { display: flex; gap: 10px; }
+  .daily-actions button { flex: 1; padding: 10px 6px; border: 1px solid var(--ink); border-radius: 8px; font-size: 12px; font-weight: 700; }
+  .daily-actions button:first-child { background: var(--ink); color: var(--paper); }
+  .profile-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .profile-item { border-top: 1px solid var(--line); padding-top: 8px; font-size: 12px; color: var(--ink-2); }
+  .profile-item b { display: block; font-size: 17px; color: var(--ink); }
+  .passport-progress { height: 6px; border-radius: 6px; background: var(--line); overflow: hidden; }
+  .passport-progress span { display: block; height: 100%; background: var(--vermilion); }
+
+  /* ---------- question ---------- */
+  .progress { display: flex; gap: 4px; }
+  .dot { height: 3px; flex: 1; background: var(--line); }
+  .dot.active { background: var(--vermilion); }
+  .q-count { font-family: var(--font-stamp); font-size: 12px; color: var(--ink-3); letter-spacing: 0.08em; }
+  .q-title { font-size: 20px; font-weight: 700; margin-top: -12px; }
+  .options { display: flex; flex-direction: column; gap: 8px; }
+  .option-btn { text-align: left; padding: 15px 16px; border: 1px solid var(--line); border-radius: 10px; font-size: 15px; background: var(--paper); }
+  .option-btn:hover { border-color: var(--ink-2); background: var(--paper-2); }
+
+  /* ---------- diagnosis (visa sticker) ---------- */
+  .visa {
+    border: 1.5px solid var(--vermilion); border-radius: 4px; padding: 16px 18px;
+    background: var(--accent-bg); position: relative;
+  }
+  .visa-label { font-size: 11px; color: var(--vermilion); font-weight: 700; margin-bottom: 6px; }
+  .visa-text { font-size: 15px; line-height: 1.8; }
+  .visa-share { margin-top: 12px; font-size: 12px; color: var(--vermilion); text-decoration: underline; text-underline-offset: 3px; }
+
+  /* ---------- result cards ---------- */
+  .result { display: flex; gap: 14px; align-items: center; text-align: left; width: 100%; padding: 14px 2px; border-bottom: 1px dashed var(--line); }
+  .result.best .row-title::before { content: "いちばん近い"; display: block; font-size: 11px; font-weight: 700; color: var(--vermilion); margin-bottom: 2px; }
+  .brew-line { font-size: 11px; color: var(--indigo); margin-top: 3px; }
+
+  /* ---------- labels ---------- */
+  .flag { display: inline-block; font-size: 10px; line-height: 1; padding: 3px 6px 2px; border: 1px solid var(--line); color: var(--ink-3); border-radius: 3px; margin-left: 5px; vertical-align: 2px; font-weight: 500; }
+  .flag.drip { color: var(--indigo); border-color: var(--indigo); }
+  .flag.rare { color: var(--vermilion); border-color: var(--vermilion); }
+
+  /* ---------- detail ---------- */
+  .detail-head { display: flex; gap: 16px; align-items: flex-start; }
+  .detail-head .stamp { width: 84px; flex-shrink: 0; }
+  .detail-name { font-size: 22px; line-height: 1.35; word-break: keep-all; overflow-wrap: anywhere; }
+  .detail-head > div { min-width: 0; }
+  .detail-sub { font-size: 12px; color: var(--ink-2); margin-top: 4px; }
+  .detail-line { font-size: 13px; margin-top: 6px; }
+  .section { border-top: 1px solid var(--line); padding-top: 12px; font-size: 13px; color: var(--ink-2); line-height: 1.75; }
+  .section-title { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+  .brew-meta { display: grid; grid-template-columns: auto 1fr; gap: 2px 14px; margin: 0 0 10px; }
+  .brew-meta dt { color: var(--ink-3); }
+  .brew-meta dd { margin: 0; color: var(--ink); }
+  .steps { margin: 0 0 10px; padding-left: 1.4em; color: var(--ink); }
+  .steps li + li { margin-top: 4px; }
+  .steps li::marker { font-family: var(--font-stamp); color: var(--vermilion); }
+  .brew-note + .brew-note { margin-top: 6px; }
+  .trait-row + .trait-row { margin-top: 14px; }
+  .trait-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-2); margin-bottom: 6px; }
+  .trait-track { position: relative; height: 1px; background: var(--ink-3); }
+  .trait-track::before, .trait-track::after { content: ""; position: absolute; top: -3px; width: 1px; height: 7px; background: var(--ink-3); }
+  .trait-track::before { left: 0; } .trait-track::after { right: 0; }
+  .trait-dot { position: absolute; top: 50%; width: 11px; height: 11px; border-radius: 50%; background: var(--vermilion); transform: translate(-50%, -50%); }
+  .trait-gap { height: 12px; }
+  .look { display: flex; align-items: center; gap: 16px; }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { padding: 8px 13px; font-size: 12px; border: 1px solid var(--line); border-radius: 20px; background: var(--paper); }
+  .chip.active { border-color: var(--indigo); color: var(--indigo); background: rgba(44, 75, 130, 0.08); }
+
+  .record { display: flex; flex-direction: column; gap: 12px; border-top: 1px solid var(--line); padding-top: 14px; }
+  .field-label { font-size: 12px; font-weight: 700; }
+  .field-hint { font-size: 11px; color: var(--ink-3); font-weight: 400; margin-left: 6px; }
+  textarea, .search-input, .record-input {
+    width: 100%; font-family: inherit; font-size: 16px; color: var(--ink);
+    background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 11px 12px;
+  }
+  textarea { min-height: 72px; resize: vertical; line-height: 1.6; }
+  textarea::placeholder, .search-input::placeholder, .record-input::placeholder { color: var(--ink-3); }
+  .pref-row { display: flex; gap: 8px; }
+  .pref-btn { flex: 1; padding: 11px 0; font-size: 13px; border: 1px solid var(--line); border-radius: 8px; }
+  .pref-btn.selected { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .primary-btn { width: 100%; padding: 15px; font-size: 15px; font-weight: 700; background: var(--ink); color: var(--paper); border-radius: 10px; }
+  .ghost-btn { width: 100%; padding: 10px; font-size: 13px; color: var(--ink-2); }
+  .err { color: var(--vermilion); font-size: 12px; min-height: 16px; text-align: center; }
+
+  /* ---------- registry ---------- */
+  .tab-row { display: flex; border-bottom: 1px solid var(--line); }
+  .tab-btn { flex: 1; padding: 10px 0; font-size: 14px; color: var(--ink-3); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tab-btn.active { color: var(--ink); border-bottom-color: var(--ink); font-weight: 700; }
+  .filter-group-label { font-size: 11px; color: var(--ink-3); margin-bottom: 6px; }
+  .filters { display: flex; flex-direction: column; gap: 12px; }
+  .filter-reset { font-size: 12px; color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; align-self: flex-end; }
+  .empty { text-align: center; color: var(--ink-3); font-size: 13px; padding: 30px 0; line-height: 1.8; }
+
+  /* ---------- badges ---------- */
+  .badge-state { font-size: 11px; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--line); color: var(--ink-3); flex-shrink: 0; margin-left: auto; }
+  .badge-state.earned { color: var(--vermilion); border-color: var(--vermilion); }
+
+  /* ============================================================
+     STAMP — このアプリの主役。国ごとに形・角度・インク色が変わる
+     ============================================================ */
+  .stamp {
+    --r: 0deg; --c: var(--vermilion);
+    position: relative; width: 100%; aspect-ratio: 1 / 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+    color: var(--c); border: 2px solid currentColor; text-align: center; padding: 6px 4px;
+    box-shadow: inset 0 0 0 2px var(--stamp-ground, var(--paper)), inset 0 0 0 3px currentColor;
+    transform: rotate(var(--r));
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' seed='4'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -2.6 0 0 0 2.35'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' seed='4'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -2.6 0 0 0 2.35'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .stamp.circle { border-radius: 50%; }
+  .stamp.rect { border-radius: 3px; aspect-ratio: 1.28 / 1; }
+  .stamp.oval { border-radius: 50% / 42%; aspect-ratio: 1.22 / 1; }
+  .stamp.cut { border-radius: 14px 3px 14px 3px; }
+  .stamp.indigo { --c: var(--indigo); }
+  .stamp-en { font-family: var(--font-stamp); font-weight: 600; font-size: 12px; line-height: 1.05; letter-spacing: 0.05em; }
+  .stamp-ja { font-size: 8.5px; font-weight: 700; line-height: 1.2; }
+  .stamp-sub { font-family: var(--font-stamp); font-size: 9px; letter-spacing: 0.06em; border-top: 1px solid currentColor; padding-top: 1px; margin-top: 2px; }
+  .stamp.len-m .stamp-en { font-size: 10.5px; letter-spacing: 0.03em; }
+  .stamp.len-l .stamp-en { font-size: 9px; letter-spacing: 0.02em; }
+  .cover-stamps .stamp.len-l .stamp-en { font-size: 8.5px; }
+  .cover-stamps .stamp.ja-l .stamp-ja { font-size: 7px; }
+  .stamp.empty {
+    color: var(--ink-3); border: 1px dashed var(--line); box-shadow: none; transform: none;
+    -webkit-mask-image: none; mask-image: none;
+  }
+  .stamp.empty .stamp-en { font-weight: 400; opacity: 0.8; }
+  .stamp.pressed { animation: press 0.55s cubic-bezier(.2, .9, .3, 1.2) both; }
+  @keyframes press {
+    0% { transform: rotate(var(--r)) scale(1.6); opacity: 0; }
+    60% { transform: rotate(var(--r)) scale(0.94); opacity: 1; }
+    100% { transform: rotate(var(--r)) scale(1); opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) { .stamp.pressed { animation: none; } }
+
+  .stamp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px 12px; }
+  .stamp-cell { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 4px; }
+  .stamp-cell .stamp { max-width: 96px; }
+  .stamp-slot { width: 100%; max-width: 96px; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; }
+  .stamp-count { font-size: 10px; color: var(--ink-3); }
+  .region-title { font-size: 13px; font-weight: 700; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); padding-bottom: 6px; margin-bottom: 12px; }
+  .region-title span { font-family: var(--font-stamp); font-weight: 400; color: var(--ink-3); font-size: 12px; }
+  .country-hero { display: flex; justify-content: center; padding: 8px 0 4px; }
+  .country-hero .stamp { width: 150px; }
+  .country-hero .stamp-en { font-size: 20px; }
+  .country-hero .stamp-ja { font-size: 12px; }
+  .country-hero .stamp-sub { font-size: 12px; }
+  .country-hero .stamp.len-m .stamp-en { font-size: 17px; }
+  .country-hero .stamp.len-l .stamp-en { font-size: 14px; }
+
+  /* ---------- 器・豆のミニチュア ---------- */
+  .swatch { flex-shrink: 0; position: relative; }
+  .swatch-slot { width: 24px; display: flex; justify-content: center; flex-shrink: 0; }
+  .shape-demitasse { border-radius: 2px 2px 45% 45%; }
+  .shape-cup { border-radius: 2px 2px 40% 40%; }
+  .shape-mug { border-radius: 2px 2px 5px 5px; }
+  .shape-glass { clip-path: polygon(0% 0%, 100% 0%, 86% 100%, 14% 100%); }
+  .shape-bean { border-radius: 50%; transform: rotate(18deg); }
+  .shape-bean::after { content: ""; position: absolute; left: 50%; top: 16%; bottom: 16%; width: 2px; background: var(--bean-line); border-radius: 2px; transform: translateX(-50%) rotate(-8deg); }
+  .swatch-lg.shape-cup::after, .swatch-lg.shape-mug::after, .swatch-lg.shape-demitasse::after,
+  .swatch-md.shape-cup::after, .swatch-md.shape-mug::after, .swatch-md.shape-demitasse::after {
+    content: ""; position: absolute; right: -7px; top: 4px; width: 7px; height: 10px;
+    border: 2px solid var(--ink-3); border-left: none; border-radius: 0 8px 8px 0;
+  }
+  .swatch-lg.shape-demitasse { width: 26px; height: 18px; } .swatch-lg.shape-cup { width: 32px; height: 22px; }
+  .swatch-lg.shape-mug { width: 26px; height: 30px; } .swatch-lg.shape-glass { width: 22px; height: 40px; } .swatch-lg.shape-bean { width: 22px; height: 30px; }
+  .swatch-md.shape-demitasse { width: 18px; height: 13px; } .swatch-md.shape-cup { width: 22px; height: 16px; }
+  .swatch-md.shape-mug { width: 18px; height: 22px; } .swatch-md.shape-glass { width: 15px; height: 28px; } .swatch-md.shape-bean { width: 16px; height: 22px; }
+  .swatch-sm.shape-demitasse { width: 14px; height: 10px; } .swatch-sm.shape-cup { width: 17px; height: 12px; }
+  .swatch-sm.shape-mug { width: 14px; height: 18px; } .swatch-sm.shape-glass { width: 11px; height: 21px; } .swatch-sm.shape-bean { width: 13px; height: 18px; }
+  .legend-row { display: flex; gap: 18px; justify-content: flex-start; align-items: flex-end; }
+  .legend-item { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+  .legend-label { font-size: 10px; color: var(--ink-3); }
+
+  /* ---------- modal ---------- */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(10, 16, 26, 0.55); display: flex; align-items: center; justify-content: center; z-index: 10; padding: 24px; }
+  .modal-card { background: var(--paper); border-radius: 12px; padding: 20px; max-width: 320px; width: 100%; }
+  .modal-text { font-size: 14px; text-align: center; margin-bottom: 16px; line-height: 1.7; }
+  .modal-actions { display: flex; gap: 10px; }
+  .modal-actions button { flex: 1; padding: 12px 0; border-radius: 8px; border: 1px solid var(--line); font-size: 13px; }
+  .modal-actions .modal-confirm { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  /* 2026 visual refresh: a tactile travel journal */
+  :root {
+    --paper:#f7f3e9; --paper-2:#eee9de; --line:#d7d0c2;
+    --ink:#26372f; --ink-2:#57655d; --ink-3:#7e8a80;
+    --vermilion:#bb6248; --indigo:#3d6673;
+    --cover:#263c37; --cover-ink:#f7eecf;
+    --accent-bg:#f4e9dd; --bean-line:rgba(24,34,26,.4);
+  }
+  @media (prefers-color-scheme:dark) {
+    :root:not([data-theme="light"]) {
+      --paper:#1b2724; --paper-2:#25332f; --line:#40514b;
+      --ink:#f1ede1; --ink-2:#b8c4b7; --ink-3:#96a69a;
+      --vermilion:#e7a287; --indigo:#a7c8cd; --cover:#263c37; --cover-ink:#f7eecf;
+      --accent-bg:#342d29;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#1b2724; --paper-2:#25332f; --line:#40514b;
+    --ink:#f1ede1; --ink-2:#b8c4b7; --ink-3:#96a69a;
+    --vermilion:#e7a287; --indigo:#a7c8cd; --cover:#263c37; --cover-ink:#f7eecf;
+    --accent-bg:#342d29;
+  }
+  html { background:var(--paper); }
+  body { background:var(--paper); letter-spacing:.01em; }
+  #app { max-width:480px; min-height:100dvh; padding:12px 20px calc(108px + env(safe-area-inset-bottom, 0px));
+    background:var(--paper); box-shadow:0 0 70px rgba(25,38,30,.06); }
+  .screen { gap:24px; animation:enter .32s ease-out both; }
+  @keyframes enter { from { opacity:.25; transform:translateY(7px) } to { opacity:1; transform:none } }
+  @media (prefers-reduced-motion:reduce) { .screen { animation:none } }
+  button { -webkit-tap-highlight-color:transparent; }
+  button:active { transform:scale(.985); }
+  .topbar { min-height:46px; gap:12px; }
+  .logo { color:var(--ink); font-size:15px; font-weight:600; letter-spacing:.22em; }
+  .topbar-mark { margin-left:auto; font:500 10px var(--font-stamp); letter-spacing:.22em; color:var(--ink-3); }
+  .back-btn { width:42px; height:42px; border-color:var(--line); background:var(--paper-2); font-size:26px; line-height:1; }
+  .page-title { font-size:26px; letter-spacing:-.03em; line-height:1.35; }
+  .page-lead { margin-top:-16px; font-size:13px; line-height:1.7; }
+  .hero-intro { padding:5px 0 0; }
+  .eyebrow { color:var(--vermilion); font:600 11px var(--font-stamp); letter-spacing:.22em; }
+  .hero-intro h1 { margin:8px 0 6px; font-size:clamp(26px,7vw,34px); line-height:1.3; letter-spacing:-.055em; }
+  .hero-intro p { margin:0; font-size:13px; color:var(--ink-2); line-height:1.8; }
+  .cover { min-height:276px; padding:25px 23px 20px 32px; border-radius:7px 18px 18px 7px;
+    border:1px solid rgba(240,226,190,.2);
+    box-shadow:3px 5px 0 #c1b5a2, 9px 15px 25px rgba(23,33,27,.18), inset 0 0 0 5px rgba(255,255,255,.035);
+    background-image:repeating-linear-gradient(99deg,transparent 0 2px,rgba(255,255,255,.02) 2px 3px),
+      radial-gradient(circle at 85% 0%,rgba(193,164,107,.15),transparent 60%); }
+  .cover::before { left:13px; background:rgba(225,200,143,.34); }
+  .cover::after { content:"✦"; position:absolute; right:26px; top:21px; color:#cbb782; font-size:28px; opacity:.7; }
+  .cover-kicker { font:500 11px var(--font-stamp); letter-spacing:.26em; color:#d8cba9; }
+  .cover-title { font-size:26px; letter-spacing:.02em; margin-top:6px; }
+  .cover-sub { color:#e1dac7; opacity:.8; line-height:1.5; }
+  .cover-stamps { margin:19px 0 15px; min-height:92px; gap:14px; }
+  .cover-stamps .stamp { width:82px; color:#e2c39d; }
+  .cover-empty { color:#eee2c9; font-size:13px; }
+  .cover-foot { border-color:rgba(239,226,187,.35); color:#e9ddbf; padding-top:13px; }
+  .cover-count { font-size:19px; color:#f6e9c7; }
+  .section-heading { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:11px; }
+  .section-heading h2 { font-size:18px; letter-spacing:-.03em; }
+  .section-heading small { color:var(--ink-3); font:500 11px var(--font-stamp); letter-spacing:.12em; }
+  .daily-card { background:var(--paper-2); border:1px solid var(--line); border-radius:18px;
+    box-shadow:0 8px 20px rgba(31,45,35,.045); padding:19px; overflow:hidden; position:relative; }
+  .daily-card::after { content:""; position:absolute; right:-24px; top:-26px; width:108px; height:108px;
+    border:1px solid var(--line); border-radius:50%; box-shadow:0 0 0 13px var(--paper-2),0 0 0 14px var(--line); opacity:.55; pointer-events:none; }
+  .daily-eyebrow { color:var(--vermilion); font-size:11px; }
+  .daily-name { font-size:21px; margin:8px 0 3px; max-width:84%; line-height:1.4; }
+  .daily-reason { font-size:13px; margin:4px 0 17px; }
+  .daily-actions button { min-height:44px; border-radius:10px; font-size:13px; position:relative; }
+  .daily-actions button:first-child { background:var(--ink); color:var(--paper); }
+  .stat-line { gap:16px; }
+  .stat-line b { font-size:23px; }
+  .profile-grid { gap:0; border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+  .profile-item { padding:13px 15px; border:0; border-bottom:1px solid var(--line); font-size:11px; }
+  .profile-item:nth-child(odd) { border-right:1px solid var(--line); }
+  .profile-item:nth-last-child(-n+2) { border-bottom:0; }
+  .profile-item b { font-size:16px; margin-top:3px; line-height:1.35; }
+  .rows { border-top:1px solid var(--line); }
+  .row,.result { min-height:67px; padding:15px 4px; gap:14px; }
+  .row-title { font-size:15px; line-height:1.5; font-weight:700; }
+  .row-sub { font-size:12px; line-height:1.65; }
+  .row-arrow { font-size:23px; color:var(--vermilion); font-family:Georgia,serif; }
+  .nav-symbol { width:32px; flex:none; font:500 23px Georgia,serif; color:var(--vermilion); text-align:center; }
+  .passport-progress { height:8px; background:var(--paper-2); border:1px solid var(--line); }
+  .passport-progress span { background:var(--vermilion); }
+  .region-title { font-size:16px; padding-bottom:10px; margin-bottom:17px; }
+  .stamp-grid { gap:18px 8px; }
+  .stamp-cell { min-height:135px; border:1px solid var(--line); border-radius:12px; background:var(--paper-2); padding:12px 5px 6px; }
+  .stamp-cell .stamp { max-width:85px; }
+  .stamp-count { font-size:10px; }
+  .option-btn { min-height:60px; background:var(--paper-2); border-radius:12px; font-weight:500; }
+  .option-btn::after { content:"›"; float:right; color:var(--vermilion); font-size:20px; line-height:1; }
+  .q-title { font-size:24px; line-height:1.45; }
+  .dot { height:5px; border-radius:10px; }
+  .visa { border-radius:12px; border-width:1px; padding:22px; }
+  .visa-text { font-size:17px; font-weight:700; }
+  .section { padding-top:17px; }
+  .section-title { font-size:13px; color:var(--ink); }
+  .detail-name { font-size:25px; }
+  .detail-line { line-height:1.7; }
+  .record { border:1px solid var(--line); background:var(--paper-2); border-radius:16px; padding:19px; gap:13px; }
+  .record > .field-label:first-child { font-size:18px; }
+  textarea,.search-input,.record-input { background:var(--paper); min-height:47px; border-radius:10px; }
+  .pref-btn { min-height:48px; border-radius:10px; background:var(--paper); }
+  .pref-btn.selected,.primary-btn { background:var(--ink); color:var(--paper); }
+  .primary-btn { min-height:52px; border-radius:11px; }
+  .chip { min-height:35px; }
+  .tab-btn { min-height:48px; }
+  .bottom-nav { position:fixed; z-index:5; bottom:0; left:50%; transform:translateX(-50%);
+    width:min(100%,480px); display:grid; grid-template-columns:repeat(4,1fr); gap:2px;
+    padding:8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+    border-top:1px solid var(--line); background:var(--paper); box-shadow:0 -7px 24px rgba(25,36,29,.06); }
+  .bottom-nav button { display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-height:48px; gap:2px; border-radius:9px; color:var(--ink-3); font-size:10px; font-weight:700; }
+  .bottom-nav button.active { color:var(--vermilion); background:var(--accent-bg); }
+  .bottom-nav .nav-icon { font:500 22px Georgia,serif; height:24px; line-height:1; }
+  @media(max-width:360px) { #app { padding-left:15px; padding-right:15px; } .cover-stamps .stamp { width:68px; } .profile-item { padding:11px; } }
+
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(function () {
+  "use strict";
+
+  var ROAST_COLOR = { light: "#b07a4a", medium: "#7a4a28", dark: "#3a2214" };
+
+  var DRINKS = [
+    /* ---------- ドリンク ---------- */
+    { id: "espresso", name: "エスプレッソ", genre: "drink", base: "espresso", milk: false, iced: false,
+      tags: { scene: 2, sweetness: -2, body: 2 },
+      line: "小さな一杯に凝縮された濃さと香り",
+      recipe: "深煎りの細挽き粉で約30ml。9気圧前後で25〜30秒抽出",
+      trivia: "表面のきめ細かい茶色の泡はクレマと呼ばれ、淹れたての目印になる",
+      color: "#c89260", colorTo: "#2a160b", look: "黒に近い茶色。表面に金褐色のクレマ", shape: "demitasse" },
+    { id: "ristretto", name: "リストレット", genre: "drink", base: "espresso", milk: false, iced: false,
+      tags: { scene: 2, sweetness: -1, body: 2 },
+      line: "エスプレッソよりさらに短く、甘みが際立つ",
+      recipe: "エスプレッソと同じ粉量で、抽出量を15〜20mlに絞る",
+      trivia: "イタリア語で「制限された」。抽出の前半だけを取るので、苦味が出きる前の甘みと濃さが残る",
+      color: "#b8834f", colorTo: "#1f1008", look: "ごく少量。とろりとした質感", shape: "demitasse" },
+    { id: "lungo", name: "ルンゴ", genre: "drink", base: "espresso", milk: false, iced: false,
+      tags: { scene: 1, sweetness: -2, body: 0 },
+      line: "長めに抽出した、苦味しっかりのエスプレッソ",
+      recipe: "エスプレッソと同じ粉量で、50〜60mlまで長く抽出",
+      trivia: "イタリア語で「長い」。お湯で割るアメリカーノと違い、抽出そのものを延ばすので苦味成分も多く出る",
+      color: "#a87445", colorTo: "#2e1a0e", look: "エスプレッソより量が多く、クレマは薄め", shape: "demitasse" },
+    { id: "americano", name: "アメリカーノ", genre: "drink", base: "espresso", milk: false, iced: false,
+      tags: { scene: 1, sweetness: -2, body: -1 },
+      line: "エスプレッソのキレをすっきり飲める",
+      recipe: "エスプレッソ1〜2ショット+お湯120〜180ml",
+      trivia: "第二次大戦中、イタリアに駐留したアメリカ兵が濃いエスプレッソをお湯で薄めて飲んだのが由来という説が有名",
+      color: "#3b2415", look: "透き通った濃い茶色", shape: "cup" },
+    { id: "cappuccino", name: "カプチーノ", genre: "drink", base: "espresso", milk: true, iced: false,
+      tags: { scene: 0, sweetness: 0, body: 1 },
+      line: "ふわふわの泡とエスプレッソの苦味",
+      recipe: "エスプレッソ1ショット+スチームミルク+厚めのフォームミルク(計150〜180ml)",
+      trivia: "カプチン会の修道士が着る茶色の修道服の色に似ていることが名前の由来とされる",
+      color: "#f1e4d2", colorTo: "#a8764a", look: "白い泡の縁に茶色のリング", shape: "cup" },
+    { id: "caffe_latte", name: "カフェラテ", genre: "drink", base: "espresso", milk: true, iced: false,
+      tags: { scene: -1, sweetness: 1, body: 0 },
+      line: "ミルクたっぷりで、まろやかにほっと一息",
+      recipe: "エスプレッソ1ショット+スチームミルク約200ml、薄いフォーム",
+      trivia: "イタリア語でlatteは「牛乳」。イタリアで「ラテ」とだけ頼むと牛乳が出てくることがある",
+      color: "#e8d3b8", colorTo: "#b88a5c", look: "明るいベージュ。ラテアートが映える", shape: "mug" },
+    { id: "flat_white", name: "フラットホワイト", genre: "drink", base: "espresso", milk: true, iced: false,
+      tags: { scene: 0, sweetness: 0, body: 1 },
+      line: "ラテより濃く、ミルクはなめらか",
+      recipe: "エスプレッソ(ダブルが多い)+きめ細かいマイクロフォームのミルク約120ml",
+      trivia: "1980年代のオーストラリアかニュージーランドが発祥とされ、どちらが元祖かはいまも議論がある",
+      color: "#d9bb96", colorTo: "#8f5f37", look: "泡は薄く平ら。濃いめのキャラメル色", shape: "cup" },
+    { id: "cortado", name: "コルタード", genre: "drink", base: "espresso", milk: true, iced: false,
+      tags: { scene: 1, sweetness: 0, body: 1 },
+      line: "エスプレッソとミルクが半々の小さな一杯",
+      recipe: "エスプレッソとスチームミルクをほぼ1:1",
+      trivia: "スペイン語のcortar(切る)が語源。ミルクでエスプレッソの角を「切る」という意味",
+      color: "#c9a07a", colorTo: "#6b4122", look: "小ぶりで、上半分がミルク色", shape: "demitasse" },
+    { id: "macchiato", name: "エスプレッソマキアート", genre: "drink", base: "espresso", milk: true, iced: false,
+      tags: { scene: 2, sweetness: -1, body: 2 },
+      line: "エスプレッソにミルクの泡をひとさじ",
+      recipe: "エスプレッソ1ショットに少量のフォームミルクをのせる",
+      trivia: "イタリア語で「染みのついた」。エスプレッソにミルクの白い染みをつけた見た目から",
+      color: "#f3ebe0", colorTo: "#2a160b", look: "濃い茶色の中心に白い泡の点", shape: "demitasse" },
+    { id: "caffe_mocha", name: "カフェモカ", genre: "drink", base: "espresso", milk: true, iced: false,
+      tags: { scene: -1, sweetness: 2, body: 1 },
+      line: "チョコレートとコーヒーの甘いごほうび",
+      recipe: "エスプレッソ+チョコレートソース+スチームミルク。好みでホイップ",
+      trivia: "イエメンのモカ港から出た豆にチョコのような風味があったことから、チョコ入りのラテをモカと呼ぶようになったとされる",
+      color: "#f5ede3", colorTo: "#5a3520", look: "ホイップの下にチョコ色", shape: "mug" },
+    { id: "caramel_macchiato", name: "キャラメルマキアート", genre: "drink", base: "espresso", milk: true, iced: false,
+      tags: { scene: -1, sweetness: 2, body: 0 },
+      line: "バニラとキャラメルの甘い香り",
+      recipe: "バニラシロップ+スチームミルク+エスプレッソを後から注ぎ、キャラメルソースをかける",
+      trivia: "伝統的なマキアートとは逆に、ミルクの上にエスプレッソで「印をつける」作り方。カフェチェーンで広まった",
+      color: "#d9a56a", colorTo: "#ecdcc6", look: "表面にキャラメルの格子模様", shape: "mug" },
+    { id: "affogato", name: "アフォガート", genre: "drink", base: "espresso", milk: true, iced: true,
+      tags: { scene: 0, sweetness: 2, body: 1 },
+      line: "アイスとエスプレッソのデザート",
+      recipe: "バニラアイスにエスプレッソ1ショットをかける",
+      trivia: "イタリア語で「溺れた」。アイスがエスプレッソに溺れる様子から",
+      color: "#f6efe2", colorTo: "#4a2a16", look: "白いアイスに茶色が流れ込む", shape: "cup" },
+    { id: "espresso_tonic", name: "エスプレッソトニック", genre: "drink", base: "espresso", milk: false, iced: true,
+      tags: { scene: 2, sweetness: 0, body: -1 },
+      line: "炭酸の爽快感と柑橘のような酸味",
+      recipe: "氷+トニックウォーター約100ml。上からエスプレッソ1ショット",
+      trivia: "北欧のカフェで広まったとされる比較的新しいドリンク。浅煎りのエスプレッソだと柑橘系の酸味が引き立つ",
+      color: "#8a5a34", colorTo: "#efe6d4", look: "透明なトニックの上に茶色の層", shape: "glass" },
+    { id: "iced_latte", name: "アイスラテ", genre: "drink", base: "espresso", milk: true, iced: true,
+      tags: { scene: 0, sweetness: 1, body: -1 },
+      line: "冷たいミルクでごくごく飲める",
+      recipe: "氷+冷たい牛乳約150ml+エスプレッソ1ショット",
+      trivia: "エスプレッソを最後に注ぐと、白と茶色の二層がしばらく残る",
+      color: "#9b6a40", colorTo: "#f1e7d8", look: "上が茶色、下が白の二層", shape: "glass" },
+    { id: "hand_drip", name: "ハンドドリップ", genre: "drink", base: "drip", milk: false, iced: false,
+      tags: { scene: 0, sweetness: -2, body: 0 },
+      line: "豆の個性をそのまま味わう基本の一杯",
+      recipe: "中細挽きの粉15gにお湯約240ml(92℃前後)。30秒蒸らしてから数回に分けて注ぐ",
+      trivia: "ペーパーフィルターは1908年、ドイツのメリタ・ベンツが息子のノートの紙を使って考案したのが始まりとされる",
+      color: "#4a2b17", look: "透明感のある赤みがかった茶色", shape: "cup" },
+    { id: "french_press", name: "フレンチプレス", genre: "drink", base: "drip", milk: false, iced: false,
+      tags: { scene: -1, sweetness: -1, body: 1 },
+      line: "コーヒーオイルごと味わう、とろりとした口当たり",
+      recipe: "粗挽きの粉15gにお湯約250ml。4分浸してから金属フィルターを押し下げる",
+      trivia: "金属フィルターはコーヒーオイルを通すので、ペーパードリップより口当たりが重くなる",
+      color: "#3a2112", look: "やや濁りのある深い茶色", shape: "mug" },
+    { id: "cafe_au_lait", name: "カフェオレ", genre: "drink", base: "drip", milk: true, iced: false,
+      tags: { scene: -2, sweetness: 0, body: -1 },
+      line: "ドリップコーヒーと牛乳を半分ずつ、やさしい味",
+      recipe: "濃いめのドリップコーヒーと温めた牛乳を1:1",
+      trivia: "フランスでは朝食にボウルのような大きな器で飲み、パンを浸して食べる習慣がある",
+      color: "#c9a27a", look: "ミルクティーのような明るい茶色", shape: "mug" },
+    { id: "wiener_coffee", name: "ウィンナーコーヒー", genre: "drink", base: "drip", milk: true, iced: false,
+      tags: { scene: -2, sweetness: 2, body: 0 },
+      line: "クリームを浮かべた喫茶店の定番",
+      recipe: "深煎りのコーヒーに甘さ控えめのホイップクリームを浮かべる。砂糖は好みで",
+      trivia: "「ウィーン風コーヒー」を意味する日本での呼び名。ウィーンにはアインシュペナーという近い飲み物がある",
+      color: "#f7f1e8", colorTo: "#3a2112", look: "真っ白なクリームの下に黒いコーヒー", shape: "cup" },
+    { id: "vietnamese", name: "ベトナムコーヒー", genre: "drink", base: "drip", milk: true, iced: false,
+      tags: { scene: 0, sweetness: 2, body: 2 },
+      line: "練乳の甘さと濃い苦味のコントラスト",
+      recipe: "カップの底に練乳。専用フィルター「フィン」で深煎りを濃く落とし、混ぜて飲む",
+      trivia: "生乳が手に入りにくかった時代に、保存のきく練乳を使ったのが始まりとされる",
+      color: "#2a160b", colorTo: "#f0e2c8", look: "上が黒、底が白い練乳の二層", shape: "glass" },
+    { id: "iced_coffee", name: "アイスコーヒー", genre: "drink", base: "cold", milk: false, iced: true,
+      tags: { scene: 1, sweetness: -2, body: 0 },
+      line: "キリッと冷えた、香り高い一杯",
+      recipe: "深煎りの粉を多めに使って濃く淹れ、氷で急冷する",
+      trivia: "日本では喫茶店文化とともに早くから定着し、「冷コー」という呼び名が残る地域もある",
+      color: "#2e1a0e", look: "氷の間に黒に近い茶色", shape: "glass" },
+    { id: "cold_brew", name: "水出しコーヒー", genre: "drink", base: "cold", milk: false, iced: true,
+      tags: { scene: -1, sweetness: -1, body: -1 },
+      line: "苦味も酸味もおだやかな、まろやかな味",
+      recipe: "粗挽きの粉を水に8〜12時間ほど浸して抽出し、こす",
+      trivia: "熱を使わないので苦味や酸味が出にくい。器具で一滴ずつ落とす「ダッチコーヒー」という淹れ方もある",
+      color: "#3a2112", look: "澄んだ濃い茶色", shape: "glass" },
+
+  ];
+
+  /* ============================================================
+     COUNTRIES — スタンプになる生産国。
+     region : africa(アフリカ・アラビア)/ latam(中南米・カリブ)/ asia(アジア・太平洋)/ blend
+     rare   : 日本であまり見かけない産地(バッジと絞り込みに使う)
+     ============================================================ */
+  var COUNTRIES = {
+    ethiopia:   { ja: "エチオピア", en: "ETHIOPIA", region: "africa" },
+    kenya:      { ja: "ケニア", en: "KENYA", region: "africa" },
+    tanzania:   { ja: "タンザニア", en: "TANZANIA", region: "africa" },
+    rwanda:     { ja: "ルワンダ", en: "RWANDA", region: "africa" },
+    burundi:    { ja: "ブルンジ", en: "BURUNDI", region: "africa" },
+    uganda:     { ja: "ウガンダ", en: "UGANDA", region: "africa" },
+    malawi:     { ja: "マラウイ", en: "MALAWI", region: "africa", rare: true },
+    zambia:     { ja: "ザンビア", en: "ZAMBIA", region: "africa", rare: true },
+    zimbabwe:   { ja: "ジンバブエ", en: "ZIMBABWE", region: "africa", rare: true },
+    drc:        { ja: "コンゴ民主共和国", en: "DR CONGO", region: "africa", rare: true },
+    st_helena:  { ja: "セントヘレナ", en: "ST HELENA", region: "africa", rare: true },
+    yemen:      { ja: "イエメン", en: "YEMEN", region: "africa" },
+    brazil:     { ja: "ブラジル", en: "BRAZIL", region: "latam" },
+    colombia:   { ja: "コロンビア", en: "COLOMBIA", region: "latam" },
+    guatemala:  { ja: "グアテマラ", en: "GUATEMALA", region: "latam" },
+    costa_rica: { ja: "コスタリカ", en: "COSTA RICA", region: "latam" },
+    panama:     { ja: "パナマ", en: "PANAMA", region: "latam" },
+    honduras:   { ja: "ホンジュラス", en: "HONDURAS", region: "latam" },
+    el_salvador:{ ja: "エルサルバドル", en: "EL SALVADOR", region: "latam" },
+    nicaragua:  { ja: "ニカラグア", en: "NICARAGUA", region: "latam" },
+    mexico:     { ja: "メキシコ", en: "MEXICO", region: "latam" },
+    peru:       { ja: "ペルー", en: "PERU", region: "latam" },
+    bolivia:    { ja: "ボリビア", en: "BOLIVIA", region: "latam", rare: true },
+    ecuador:    { ja: "エクアドル", en: "ECUADOR", region: "latam", rare: true },
+    jamaica:    { ja: "ジャマイカ", en: "JAMAICA", region: "latam" },
+    cuba:       { ja: "キューバ", en: "CUBA", region: "latam", rare: true },
+    dominican:  { ja: "ドミニカ共和国", en: "DOMINICAN REP.", region: "latam", rare: true },
+    haiti:      { ja: "ハイチ", en: "HAITI", region: "latam", rare: true },
+    puerto_rico:{ ja: "プエルトリコ", en: "PUERTO RICO", region: "latam", rare: true },
+    indonesia:  { ja: "インドネシア", en: "INDONESIA", region: "asia" },
+    vietnam:    { ja: "ベトナム", en: "VIETNAM", region: "asia" },
+    hawaii:     { ja: "アメリカ(ハワイ)", en: "HAWAII", region: "asia" },
+    png:        { ja: "パプアニューギニア", en: "PAPUA NEW GUINEA", region: "asia" },
+    india:      { ja: "インド", en: "INDIA", region: "asia" },
+    china:      { ja: "中国", en: "CHINA", region: "asia" },
+    thailand:   { ja: "タイ", en: "THAILAND", region: "asia" },
+    myanmar:    { ja: "ミャンマー", en: "MYANMAR", region: "asia", rare: true },
+    laos:       { ja: "ラオス", en: "LAOS", region: "asia", rare: true },
+    timor:      { ja: "東ティモール", en: "TIMOR-LESTE", region: "asia", rare: true },
+    philippines:{ ja: "フィリピン", en: "PHILIPPINES", region: "asia", rare: true },
+    taiwan:     { ja: "台湾", en: "TAIWAN", region: "asia", rare: true },
+    nepal:      { ja: "ネパール", en: "NEPAL", region: "asia", rare: true },
+    japan:      { ja: "日本", en: "JAPAN", region: "asia", rare: true },
+    australia:  { ja: "オーストラリア", en: "AUSTRALIA", region: "asia", rare: true },
+    blend:      { ja: "ブレンド", en: "BLEND", region: "blend" }
+  };
+
+  /* ============================================================
+     BEANS — 豆。B(id, 名前, 国, 焙煎度, [scene, acidity, body], キャッチ, 豆のデータ, 豆知識, 見た目?)
+     ============================================================ */
+  var ROAST_LOOK = { light: "明るいシナモン色", medium: "栗のような茶色", dark: "黒に近い焦げ茶。表面に油のつや" };
+  function B(id, name, country, roast, t, line, spec, trivia, look) {
+    return { id: id, name: name, genre: "bean", country: country, region: COUNTRIES[country].region, rare: !!COUNTRIES[country].rare,
+      roast: roast, tags: { scene: t[0], acidity: t[1], body: t[2] }, line: line, recipe: spec, trivia: trivia,
+      look: look || ROAST_LOOK[roast], shape: "bean" };
+  }
+  var BEANS = [
+    // アフリカ・アラビア
+    B("ethiopia_yirgacheffe", "エチオピア イルガチェフェ", "ethiopia", "light", [1, 2, -2], "ジャスミンや柑橘を思わせる華やかな香り", "浅煎り/ウォッシュト/高地産",
+      "エチオピアはコーヒーの故郷とされ、ヤギ飼いのカルディが、実を食べて元気になったヤギに気づいたという伝説がある"),
+    B("ethiopia_natural", "エチオピア ナチュラル", "ethiopia", "light", [0, 1, 0], "ベリーのような甘い果実感", "浅煎り/ナチュラル(実ごと乾燥)",
+      "ナチュラル精製は果肉をつけたまま天日で乾かす昔ながらの方法。果実の甘みが豆に移りやすい"),
+    B("kenya", "ケニア AA", "kenya", "light", [2, 2, 1], "カシスやグレープフルーツのような力強い酸", "浅〜中煎り/ウォッシュト",
+      "「AA」は豆の大きさによる等級で、最も大きな粒を指す。味そのものの格付けではない", "明るい茶色"),
+    B("tanzania", "タンザニア キリマンジャロ", "tanzania", "medium", [1, 1, 0], "キレのある酸と程よいコク", "中煎り/ウォッシュト",
+      "日本では「キリマンジャロ」の名で親しまれるが、タンザニア産の豆に広く使われる呼び名で、山そのもので採れたとは限らない"),
+    B("rwanda", "ルワンダ", "rwanda", "light", [0, 1, -1], "紅茶のような透明感とやさしい甘み", "浅煎り/ウォッシュト",
+      "小規模農家が多く、共同で使う水洗処理場の整備によって品質が大きく向上した"),
+    B("burundi", "ブルンジ", "burundi", "light", [0, 1, 0], "赤い果実のような明るい甘酸っぱさ", "浅煎り/ウォッシュト",
+      "ルワンダの隣国で、小規模農家が中心。標高の高い丘陵地で栽培される"),
+    B("uganda", "ウガンダ", "uganda", "medium", [0, 0, 1], "チョコのような甘みとしっかりしたボディ", "中煎り/ウォッシュト",
+      "ロブスタ種の原産地の一つとされ、生産量はロブスタが多い。エルゴン山周辺ではアラビカ種も育つ"),
+    B("malawi", "マラウイ", "malawi", "medium", [-1, 0, -1], "穏やかで軽やか、飲み疲れしない味", "中煎り/ウォッシュト",
+      "生産量は少ないが、ゲイシャ種など珍しい品種も栽培されている"),
+    B("zambia", "ザンビア", "zambia", "medium", [0, 1, 0], "柑橘系の酸と、すっきりした後味", "中煎り/ウォッシュト",
+      "国の北部の高地で栽培される。生産量が少なく、日本ではあまり見かけない"),
+    B("zimbabwe", "ジンバブエ", "zimbabwe", "medium", [0, 1, 0], "ワインのような酸とまろやかな甘み", "中煎り/ウォッシュト",
+      "東部のチマニマニ周辺など高地で栽培される。一時期生産が大きく落ち込み、流通量は少ない"),
+    B("drc", "コンゴ キブ", "drc", "medium", [0, 1, 1], "濃い果実味とほどよいコク", "中煎り/ウォッシュト",
+      "キブ湖周辺の高地で栽培される。隣国ルワンダと同じ湖を囲む産地"),
+    B("st_helena", "セントヘレナ", "st_helena", "medium", [-1, 1, -1], "上品でやわらかな、希少な島の豆", "中煎り/ウォッシュト",
+      "南大西洋に浮かぶ英国領の孤島。流刑されたナポレオンが飲んだと伝わり、生産量はごくわずか"),
+    B("yemen", "イエメン モカ", "yemen", "medium", [-1, 1, 1], "ワインのような複雑な香り", "中煎り/ナチュラル",
+      "かつてコーヒー輸出の中心だったモカ港の名が今も残る。山岳地帯の段々畑で昔ながらの方法で栽培される", "栗のような茶色。粒は小さめで不揃い"),
+
+    // 中南米・カリブ
+    B("brazil", "ブラジル", "brazil", "medium", [-1, -1, 0], "ナッツやチョコのような香ばしさ", "中煎り/ナチュラル・パルプドナチュラル",
+      "世界最大のコーヒー生産国。クセが少なく、多くのブレンドの土台に使われる"),
+    B("colombia", "コロンビア", "colombia", "medium", [0, 0, 0], "甘み・酸・コクのバランス型", "中煎り/ウォッシュト",
+      "アンデス山脈の斜面で栽培され、地域によっては年に2回の収穫期がある"),
+    B("guatemala", "グアテマラ アンティグア", "guatemala", "medium", [0, 0, 1], "スモーキーな香りとしっかりしたコク", "中〜深煎り/ウォッシュト",
+      "アンティグアは火山に囲まれた盆地。火山灰を含む土壌がコーヒー栽培に向くとされる", "深い茶色"),
+    B("costa_rica_honey", "コスタリカ ハニー", "costa_rica", "light", [0, 1, 0], "はちみつのような甘み", "浅〜中煎り/ハニープロセス",
+      "ハニーは果肉を除いた後、ぬめりを残したまま乾かす精製方法。はちみつを使うわけではない", "明るい茶色"),
+    B("panama_geisha", "パナマ ゲイシャ", "panama", "light", [1, 2, -2], "ジャスミンとベルガモットのような香り", "浅煎り/ウォッシュトまたはナチュラル",
+      "エチオピアのゲシャ村周辺が原産とされる品種。2000年代にパナマの農園が品評会で注目を集め、高値で知られるようになった"),
+    B("honduras", "ホンジュラス", "honduras", "medium", [0, 0, 0], "キャラメルのような甘さとやさしい酸", "中煎り/ウォッシュト",
+      "中米有数の生産国。近年は品評会で評価される小規模農園が増えている"),
+    B("el_salvador", "エルサルバドル パカマラ", "el_salvador", "medium", [0, 1, 0], "ミルクチョコのようななめらかさと個性的な香り", "中煎り/ウォッシュト",
+      "パカマラ種はこの国で生まれた品種。豆が大粒なのが特徴", "栗のような茶色。粒が大きい"),
+    B("nicaragua", "ニカラグア", "nicaragua", "medium", [-1, 0, 0], "ナッツのような香ばしさとまろやかな甘み", "中煎り/ウォッシュト",
+      "北部のヒノテガやマタガルパが主な産地。木陰で育てるシェードグロウンの農園も多い"),
+    B("mexico", "メキシコ", "mexico", "medium", [0, 0, -1], "軽やかでクセのない、毎日の一杯向き", "中煎り/ウォッシュト",
+      "南部のチアパスやオアハカが主な産地。有機栽培のコーヒーの生産でも知られる"),
+    B("peru", "ペルー", "peru", "medium", [0, 0, -1], "やさしい甘みとすっきりした後味", "中煎り/ウォッシュト",
+      "アンデスの高地で小規模農家が栽培する。有機認証のコーヒーが多いことで知られる"),
+    B("bolivia", "ボリビア", "bolivia", "light", [1, 1, -1], "花のような香りと澄んだ酸", "浅煎り/ウォッシュト",
+      "標高の高い産地が多いが生産量は少なく、日本ではあまり見かけない"),
+    B("ecuador", "エクアドル", "ecuador", "light", [0, 1, -1], "赤道直下の高地らしい、軽やかな酸", "浅煎り/ウォッシュト",
+      "本土の山岳地帯のほか、ガラパゴス諸島のサンクリストバル島でもごく少量栽培されている"),
+    B("blue_mountain", "ジャマイカ ブルーマウンテン", "jamaica", "medium", [-1, 0, -1], "上品で軽やか、雑味が少ない", "中煎り/ウォッシュト",
+      "ブルーマウンテン山脈の限られた地域の豆だけが名乗れる。かつては生産量の多くが日本向けだった"),
+    B("cuba", "キューバ クリスタルマウンテン", "cuba", "dark", [-1, -1, 1], "苦味とコクがバランスよくまとまる", "中深煎り/ウォッシュト",
+      "東部の山岳地帯で栽培される。「クリスタルマウンテン」の名で日本に輸入されてきた"),
+    B("dominican", "ドミニカ共和国 バラオナ", "dominican", "medium", [-1, 0, 0], "やわらかな酸とチョコのような甘み", "中煎り/ウォッシュト",
+      "カリブ海の島国。南西部のバラオナ地方など山間部で栽培される"),
+    B("haiti", "ハイチ", "haiti", "medium", [-1, -1, 1], "素朴で力強いコク", "中煎り/ウォッシュト",
+      "18世紀には世界有数のコーヒー産地だった。現在の生産量は少ない"),
+    B("puerto_rico", "プエルトリコ ヤウコ", "puerto_rico", "medium", [-1, 0, -1], "まろやかで軽い口当たり", "中煎り/ウォッシュト",
+      "カリブ海の米国領。山間部のヤウコ周辺が知られるが、ハリケーンの被害を受けやすく生産量は少ない"),
+
+    // アジア・太平洋
+    B("mandheling", "インドネシア マンデリン", "indonesia", "dark", [-1, -2, 2], "ハーブや土を思わせる重厚なコク", "深煎り/スマトラ式",
+      "スマトラ島のスマトラ式は、豆を半乾きのうちに脱穀する独特の精製。深い色と重いコクが生まれる"),
+    B("toraja", "インドネシア トラジャ", "indonesia", "medium", [-1, -1, 1], "なめらかなコクとスパイスのような香り", "中深煎り/スマトラ式",
+      "スラウェシ島の山岳地帯で栽培される。1970年代に日本の企業が農園を復興させたことでも知られる", "深い茶色"),
+    B("vietnam_robusta", "ベトナム ロブスタ", "vietnam", "dark", [2, -2, 2], "力強い苦味と香ばしさ", "深煎り/ロブスタ種",
+      "ベトナムは世界有数の生産国で、多くはロブスタ種。カフェインはアラビカ種の約2倍と言われる", "黒に近い焦げ茶"),
+    B("kona", "ハワイ コナ", "hawaii", "medium", [0, 1, -1], "穏やかな酸と軽やかな口当たり", "中煎り/ウォッシュト",
+      "ハワイ島コナ地区の火山斜面で栽培される。「コナブレンド」はコナ豆の割合が少ない場合もあるので表示を確認したい"),
+    B("png", "パプアニューギニア", "png", "medium", [0, 0, 1], "やわらかな酸としっかりしたボディ", "中煎り/ウォッシュト",
+      "高地の小規模農家が中心。ジャマイカのブルーマウンテンから持ち込まれた苗がルーツの一つとされる"),
+    B("india_malabar", "インド モンスーンマラバール", "india", "dark", [-1, -2, 2], "酸がほとんどない、まろやかで重いコク", "中深煎り/モンスーン加工",
+      "モンスーンの湿った風に豆をさらして熟成させる独特の加工。帆船で運ばれていた時代の風味を再現したものとされる", "焦げ茶。生豆の時点で黄色っぽく大粒"),
+    B("yunnan", "中国 雲南", "china", "medium", [0, 0, 0], "クセが少なく、やさしい甘み", "中煎り/ウォッシュト",
+      "雲南省のプーアル周辺などで栽培が広がり、生産量が増えている"),
+    B("thailand", "タイ ドイチャン", "thailand", "medium", [0, 0, 0], "穏やかな酸とナッツのような甘み", "中煎り/ウォッシュト",
+      "北部の山岳地帯では、ケシ栽培からの転作としてコーヒー栽培が広められた歴史がある"),
+    B("myanmar", "ミャンマー シャン", "myanmar", "medium", [0, 1, 0], "果実味のある明るい味わい", "中煎り/ナチュラル・ウォッシュト",
+      "シャン州の高地が主な産地。品質向上の取り組みで近年注目されるようになった"),
+    B("laos", "ラオス ボラベン", "laos", "medium", [-1, 0, 1], "素朴な甘みと丸みのあるコク", "中煎り/ウォッシュト",
+      "南部のボラベン高原が主な産地。フランス統治時代に栽培が始まった"),
+    B("timor", "東ティモール", "timor", "medium", [0, 0, 0], "ハーブのような香りとやさしい口当たり", "中煎り/ウォッシュト",
+      "この島で自然に生まれた交配種「ティモール・ハイブリッド」は、さび病に強い品種の親になった"),
+    B("philippines", "フィリピン", "philippines", "medium", [-1, -1, 1], "香ばしさとしっかりした苦味", "中煎り/ウォッシュト",
+      "かつては世界有数の生産国だったが、19世紀末にさび病で大きな打撃を受けた"),
+    B("taiwan", "台湾 阿里山", "taiwan", "light", [0, 1, -1], "お茶のような透明感と甘い余韻", "浅煎り/ウォッシュト",
+      "阿里山など高地の茶産地でも栽培されている。生産量が少なく、島内で消費されることが多い"),
+    B("nepal", "ネパール", "nepal", "light", [0, 1, -1], "澄んだ酸と軽やかな飲み口", "浅煎り/ウォッシュト",
+      "ヒマラヤ山麓の丘陵地で小規模に栽培される、比較的新しい産地"),
+    B("japan_okinawa", "日本 沖縄", "japan", "light", [-1, 0, -1], "すっきり軽く、やさしい甘み", "浅煎り/ウォッシュト",
+      "沖縄や奄美ではごく少量の栽培が続いている。台風や冬の寒さが課題になる"),
+    B("australia", "オーストラリア", "australia", "medium", [0, 0, -1], "マイルドでバランスのいい味", "中煎り/ウォッシュト",
+      "ニューサウスウェールズ州北部やクイーンズランド州で栽培される。機械収穫を取り入れた農園もある"),
+
+    // ブレンド
+    B("espresso_blend", "エスプレッソブレンド", "blend", "dark", [1, -1, 2], "ミルクに負けないチョコのような深み", "深煎り/複数産地の配合",
+      "ブレンドは単一産地の豆(シングルオリジン)と違い、配合を調整して一年中同じ味を保つ目的もある"),
+    B("mocha_java", "モカ・ジャバ", "blend", "medium", [-1, 0, 1], "世界最古とも言われるブレンド", "中〜深煎り/イエメン+インドネシア",
+      "イエメンのモカとインドネシアのジャワ島の豆を合わせたもので、最古のブレンドと言われる", "深い茶色")
+  ];
+  DRINKS = DRINKS.concat(BEANS);
+  DRINKS.forEach(function (d) { if (d.genre === "bean") d.color = ROAST_COLOR[d.roast]; });
+  /* ---------- ドリンク:必要な道具 ----------
+     drip    : ハンドドリップの道具だけで作れる
+     special : プレス器・フィンなど専用の器具が必要
+     machine : エスプレッソマシンが必要(指定がなければ base=espresso はこれ) */
+  var TOOL_LABEL = { drip: "ドリップOK", special: "専用器具", machine: "マシン" };
+  var DRINK_TOOL = {
+    hand_drip: "drip", cafe_au_lait: "drip", wiener_coffee: "drip", iced_coffee: "drip",
+    french_press: "special", vietnamese: "special", cold_brew: "special"
+  };
+  // マシン不要のドリンクは1人分の手順に置き換える(配列にすると詳細画面で番号付きの手順になる)
+  var DRINK_STEPS = {
+    hand_drip: [
+      "中煎りの粉12g(中細挽き)、90℃前後のお湯180mlを用意する",
+      "お湯を30ml注いで30秒蒸らす",
+      "「の」の字を描くように3回に分けて注ぐ",
+      "2分30秒前後、約150mlになったらドリッパーを外す(最後まで落としきらない)"
+    ],
+    cafe_au_lait: [
+      "深煎りの粉12g(中細挽き)に85℃前後のお湯150mlで、約100ml濃いめに落とす",
+      "牛乳100mlを沸騰させない程度に温める",
+      "カップにコーヒーと牛乳を同時に注ぐ"
+    ],
+    wiener_coffee: [
+      "深煎りの粉12g(中細挽き)、85℃前後のお湯180mlで約150mlを落とす",
+      "好みで砂糖を溶かしておく",
+      "甘さ控えめに7分立てにした生クリーム大さじ3ほどを、スプーンでそっとのせる"
+    ],
+    iced_coffee: [
+      "サーバーに氷100gを入れておく",
+      "深煎りの粉15g(中細挽き)に90℃前後のお湯150mlで、氷の上へ直接落とす",
+      "軽く混ぜて冷やし、新しい氷を入れたグラスに注ぐ"
+    ],
+    french_press: [
+      "粗挽きの粉12gをプレス器に入れる",
+      "94℃前後のお湯200mlを注ぎ、ふたをして4分待つ",
+      "プランジャーをゆっくり押し下げ、すぐカップに移す"
+    ],
+    vietnamese: [
+      "カップの底に練乳大さじ1〜2を入れ、フィンをのせる",
+      "深煎りの粉10gを入れ、お湯20mlで30秒蒸らす",
+      "お湯80mlを足してふたをし、落ちきったらよく混ぜる"
+    ],
+    cold_brew: [
+      "粗挽きの粉15gを水出しポットかボトルに入れる",
+      "水200mlを注ぎ、冷蔵庫で8〜12時間置く",
+      "こして約170ml。氷を入れたグラスでどうぞ"
+    ]
+  };
+  DRINKS.forEach(function (d) {
+    if (d.genre !== "drink") return;
+    d.tool = DRINK_TOOL[d.id] || "machine";
+    if (DRINK_STEPS[d.id]) d.recipe = DRINK_STEPS[d.id];
+  });
+
+  /* ---------- 豆:1人分(カップ1杯・約150ml)のハンドドリップ目安 ----------
+     焙煎度ごとの基本値に、豆ごとの温度・器具・コツを上書きする */
+  var BREW_BASE = {
+    light:  { dose: 12, water: 190, temp: 93, grind: "中細挽き", bloom: 30, time: "2分30秒", device: "円錐形(V60など)。流れが速く、香りと酸がクリアに出る" },
+    medium: { dose: 12, water: 180, temp: 90, grind: "中細挽き", bloom: 30, time: "2分30秒", device: "どの器具でも合わせやすい" },
+    dark:   { dose: 13, water: 180, temp: 84, grind: "中挽き",   bloom: 40, time: "2分45秒", device: "台形(カリタなど)やネル。じっくり落とすとコクがまとまる" }
+  };
+  var BEAN_BREW = {
+    ethiopia_yirgacheffe: { tip: "酸っぱすぎたら、少し細かく挽くか温度を上げる。淹れたてはまず香りから" },
+    ethiopia_natural: { temp: 91, tip: "果実感が強いので91℃くらいでも甘さが残る。少し冷めてからの甘さも楽しい" },
+    kenya: { tip: "酸がしっかり出る豆。尖って感じたら湯温を1〜2℃下げる" },
+    rwanda: { temp: 92, tip: "軽やかさを残したいので、注ぎは細く静かに" },
+    tanzania: { tip: "キレを出すなら90℃、丸くしたいなら88℃" },
+    yemen: { temp: 88, device: "台形(カリタなど)。ゆっくり落として複雑な香りを引き出す", tip: "粒が不揃いなので、挽いたあと細かい粉を軽くふるうと雑味が減る" },
+    brazil: { temp: 88, tip: "苦味寄りにしたいなら87℃まで下げても甘さが残る" },
+    colombia: { tip: "バランス型なので、ほかの豆と飲み比べる「ものさし」にちょうどいい" },
+    guatemala: { temp: 88, tip: "コクを出したい時は、蒸らしを40秒に延ばす" },
+    costa_rica_honey: { temp: 92, tip: "甘さを引き出したいので、最後の注ぎはゆっくり" },
+    panama_geisha: { tip: "香りが主役の豆。まずは基本どおりに淹れて、香りを確かめてから調整する" },
+    blue_mountain: { temp: 88, tip: "繊細な味なので、高温で一気に注がず丁寧に" },
+    mandheling: { tip: "苦味が強すぎたら温度を下げる。粉がよく膨らむので蒸らしのお湯はたっぷりめに" },
+    kona: { temp: 89, tip: "軽やかさを残すため、注ぎはゆっくり細く" },
+    vietnam_robusta: { temp: 82, tip: "本来はフィンで練乳と合わせる豆。ドリップなら82℃まで下げると飲みやすい" },
+    espresso_blend: { tip: "エスプレッソ向けの配合だが、ドリップでも濃いコクが出る。牛乳で割ってもおいしい" },
+    mocha_java: { temp: 88, tip: "88℃で甘みとコクのバランスが取りやすい" }
+  };
+  function brewFor(d) {
+    return Object.assign({}, BREW_BASE[d.roast], BEAN_BREW[d.id] || {});
+  }
+  function brewSummary(d) {
+    var b = brewFor(d);
+    return "粉" + b.dose + "g・" + b.temp + "℃・お湯" + b.water + "ml・" + b.time;
+  }
+
+  var DRINK_QUESTIONS = [
+    { key: "scene", title: "今の気分は?", options: [
+      { label: "ほっと一息つきたい", value: -2 },
+      { label: "いつも通り", value: 0 },
+      { label: "シャキッとしたい", value: 2 }
+    ]},
+    { key: "iced", title: "ホットとアイス、どっち?", options: [
+      { label: "ホット", value: false },
+      { label: "アイス", value: true },
+      { label: "どちらでも", value: null }
+    ]},
+    { key: "milk", title: "ミルクは?", options: [
+      { label: "入れたい", value: true },
+      { label: "入れない", value: false },
+      { label: "どちらでも", value: null }
+    ]},
+    { key: "sweetness", title: "甘さは?", options: [
+      { label: "甘めがいい", value: 2 },
+      { label: "ほんのり", value: 0 },
+      { label: "甘くないのがいい", value: -2 }
+    ]},
+    { key: "body", title: "濃さは?", options: [
+      { label: "軽め", value: -2 },
+      { label: "普通", value: 0 },
+      { label: "しっかり濃く", value: 2 }
+    ]}
+  ];
+
+  // 追加した産地向けの淹れ方のコツ
+  Object.assign(BEAN_BREW, {
+    toraja: { temp: 87, tip: "コクを出したい時は蒸らしを40秒に。スパイスのような香りは少し冷めてから感じやすい" },
+    india_malabar: { tip: "酸がほとんどない豆。温度を下げすぎず84℃前後でコクを引き出す。牛乳とも合う" },
+    st_helena: { temp: 88, tip: "やわらかな味を生かすため、注ぎはゆっくり細く" },
+    taiwan: { temp: 91, tip: "お茶のような軽さが持ち味。濃く出しすぎないよう、粉は細かくしすぎない" },
+    japan_okinawa: { temp: 90, tip: "生産量がごくわずかな豆。まずは基本どおりに淹れて味を確かめたい" },
+    cuba: { temp: 85 },
+    haiti: { temp: 88 },
+    el_salvador: { tip: "大粒の豆なので、挽き目が粗くならないようミルを確認する" }
+  });
+
+  var BEAN_QUESTIONS = [
+    { key: "scene", title: "いつ飲むことが多い?", options: [
+      { label: "朝や仕事中", value: 2 }, { label: "決まっていない", value: 0 }, { label: "食後やくつろぎ時間", value: -2 } ]},
+    { key: "acidity", title: "酸味と苦味、どっちが好き?", options: [
+      { label: "フルーティーな酸味", value: 2 }, { label: "バランスよく", value: 0 }, { label: "香ばしい苦味", value: -2 } ]},
+    { key: "body", title: "口当たりは?", options: [
+      { label: "すっきり軽く", value: -2 }, { label: "普通", value: 0 }, { label: "どっしり重く", value: 2 } ]},
+    { key: "region", title: "気になる産地は?", options: [
+      { label: "アフリカ・アラビア", value: "africa" }, { label: "中南米・カリブ", value: "latam" },
+      { label: "アジア・太平洋", value: "asia" }, { label: "ブレンド", value: "blend" }, { label: "こだわらない", value: null } ]}
+  ];
+
+  var BASE_LABEL = { espresso: "エスプレッソ系", drip: "ドリップ・抽出系", cold: "水出し・アイス系" };
+  var REGION_LABEL = { africa: "アフリカ・アラビア", latam: "中南米・カリブ", asia: "アジア・太平洋", blend: "ブレンド" };
+  var ROAST_LABEL = { light: "浅煎り", medium: "中煎り", dark: "深煎り" };
+  var SHAPE_LABEL = { demitasse: "デミタス", cup: "カップ", mug: "マグ", glass: "グラス" };
+  var PREF_LABEL = { 3: "好み", 2: "ふつう", 1: "好みじゃない" };
+  var SCENE_AXIS = { key: "scene", left: "ほっと一息", right: "シャキッと" };
+
+  var GENRES = {
+    drink: {
+      label: "ドリンク", pickSub: "カフェのメニューから選ぶ", questions: DRINK_QUESTIONS,
+      categoryKey: "base", flagKeys: ["milk", "iced"], numericKeys: ["scene", "sweetness", "body"],
+      traitAxes: [{ key: "body", left: "軽やか", right: "濃厚" }, { key: "sweetness", left: "ブラック寄り", right: "甘め" }],
+      relatedLabel: "同じ系統のドリンク",
+      filters: [
+        { key: "tool", label: "必要な道具", options: [{ value: "drip", label: "ドリップOK" }, { value: "special", label: "専用器具" }, { value: "machine", label: "マシン" }] },
+        { key: "iced", label: "温度", options: [{ value: false, label: "ホット" }, { value: true, label: "アイス" }] },
+        { key: "milk", label: "ミルク", options: [{ value: true, label: "ミルクあり" }, { value: false, label: "ミルクなし" }] },
+        { key: "sweetness", label: "甘さ", options: [{ value: -1, label: "ブラック寄り" }, { value: 0, label: "ほんのり" }, { value: 1, label: "甘め" }] },
+        { key: "body", label: "濃さ", options: [{ value: -1, label: "軽やか" }, { value: 0, label: "普通" }, { value: 1, label: "濃厚" }] }
+      ]
+    },
+    bean: {
+      label: "豆", pickSub: "産地や焙煎度から選ぶ", questions: BEAN_QUESTIONS,
+      categoryKey: "region", flagKeys: [], numericKeys: ["scene", "acidity", "body"],
+      traitAxes: [{ key: "body", left: "軽やか", right: "重厚" }, { key: "acidity", left: "苦味寄り", right: "酸味寄り" }],
+      relatedLabel: "同じ地域の豆",
+      filters: [
+        { key: "region", label: "地域", options: [{ value: "africa", label: "アフリカ・アラビア" }, { value: "latam", label: "中南米・カリブ" }, { value: "asia", label: "アジア・太平洋" }, { value: "blend", label: "ブレンド" }] },
+        { key: "rare", label: "珍しさ", options: [{ value: true, label: "希少な産地" }] },
+        { key: "roast", label: "焙煎度", options: [{ value: "light", label: "浅煎り" }, { value: "medium", label: "中煎り" }, { value: "dark", label: "深煎り" }] },
+        { key: "acidity", label: "味の傾向", options: [{ value: -1, label: "苦味寄り" }, { value: 0, label: "バランス" }, { value: 1, label: "酸味寄り" }] }
+      ]
+    }
+  };
+
+  /* ============================================================
+     HELPERS
+     ============================================================ */
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; });
+  }
+  function findDrink(id) { return DRINKS.find(function (x) { return x.id === id; }); }
+  function genreCount(g) { return DRINKS.filter(function (d) { return d.genre === g; }).length; }
+  function subLabel(d) {
+    if (d.genre === "drink") return BASE_LABEL[d.base];
+    return COUNTRIES[d.country].ja + "・" + ROAST_LABEL[d.roast];
+  }
+  function flags(d) {
+    var h = "";
+    if (d.milk) h += '<span class="flag">ミルク</span>';
+    if (d.iced) h += '<span class="flag">アイス</span>';
+    if (d.tool) h += '<span class="flag' + (d.tool === "drip" ? " drip" : "") + '">' + TOOL_LABEL[d.tool] + "</span>";
+    if (d.rare) h += '<span class="flag rare">希少</span>';
+    return h;
+  }
+  function el(html) {
+    var t = document.createElement("template");
+    t.innerHTML = html.trim();
+    return t.content.firstChild;
+  }
+  function fmtDate(iso) {
+    var d = new Date(iso);
+    return d.getFullYear() + "." + ("0" + (d.getMonth() + 1)).slice(-2) + "." + ("0" + d.getDate()).slice(-2);
+  }
+  var COUNTRY_KEYS = Object.keys(COUNTRIES).filter(function (k) { return k !== "blend"; });
+
+  /* ============================================================
+     STORE
+     ============================================================ */
+  var STORAGE_KEY = "coffeelog_stock_v1";
+  function loadStock() {
+    try {
+      var parsed = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || "[]");
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) { return []; }
+  }
+  function saveStock(s) { try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); return true; } catch (e) { return false; } }
+  var stock = loadStock();
+
+  // 国ごとの集計 { country: { count, first } }
+  function passport(s) {
+    var p = {};
+    s.forEach(function (log) {
+      var d = findDrink(log.drinkId);
+      if (!d || d.genre !== "bean") return;
+      var e = p[d.country] || (p[d.country] = { count: 0, first: log.timestamp, last: log.timestamp });
+      e.count++;
+      if (log.timestamp < e.first) e.first = log.timestamp;
+      if (log.timestamp > e.last) e.last = log.timestamp;
+    });
+    return p;
+  }
+  function countryCount(p) { return Object.keys(p).filter(function (k) { return k !== "blend"; }).length; }
+  function topValue(values) {
+    var counts = {};
+    values.forEach(function (v) { if (v) counts[v] = (counts[v] || 0) + 1; });
+    return Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a] || a.localeCompare(b); })[0];
+  }
+  function dailyBean() {
+    var p = passport(stock), favorites = stock.filter(function (l) { return l.preference === 3; })
+      .map(function (l) { return findDrink(l.drinkId); }).filter(function (d) { return d && d.genre === "bean"; });
+    var roast = topValue(favorites.map(function (d) { return d.roast; }));
+    var pool = DRINKS.filter(function (d) { return d.genre === "bean" && d.country !== "blend"; });
+    pool.sort(function (a, b) {
+      var sa = (p[a.country] ? 0 : 4) + (a.roast === roast ? 2 : 0);
+      var sb = (p[b.country] ? 0 : 4) + (b.roast === roast ? 2 : 0);
+      return sb - sa || a.id.localeCompare(b.id);
+    });
+    var day = new Date().toLocaleDateString('en-CA');
+    var best = (p[pool[0].country] ? pool : pool.filter(function (d) { return !p[d.country] && (!roast || d.roast === roast); }));
+    if (!best.length) best = pool;
+    return best[hash(day) % best.length];
+  }
+
+  function countMatching(s, pred) {
+    var n = 0;
+    s.forEach(function (log) { var d = findDrink(log.drinkId); if (d && pred(d)) n++; });
+    return n;
+  }
+  function distinct(s, pred, key) {
+    var seen = {};
+    s.forEach(function (log) { var d = findDrink(log.drinkId); if (d && pred(d)) seen[d[key]] = true; });
+    return Object.keys(seen).length;
+  }
+  var isBean = function (d) { return d.genre === "bean"; };
+  var isDrink = function (d) { return d.genre === "drink"; };
+
+  var BADGES = [
+    { id: "first", label: "はじめの一杯", desc: "1杯記録する", check: function (s) { return s.length >= 1; } },
+    { id: "first_stamp", label: "最初のスタンプ", desc: "豆を記録して、パスポートに1つ目のスタンプを押す", check: function (s) { return countryCount(passport(s)) >= 1; } },
+    { id: "c5", label: "5か国", desc: "5か国の豆を記録する", check: function (s) { return countryCount(passport(s)) >= 5; } },
+    { id: "c10", label: "10か国", desc: "10か国の豆を記録する", check: function (s) { return countryCount(passport(s)) >= 10; } },
+    { id: "c20", label: "20か国", desc: "20か国の豆を記録する", check: function (s) { return countryCount(passport(s)) >= 20; } },
+    { id: "c_all", label: "全産地制覇", desc: "登録されている全" + COUNTRY_KEYS.length + "か国の豆を記録する", check: function (s) { return countryCount(passport(s)) >= COUNTRY_KEYS.length; } },
+    { id: "rare1", label: "秘境の一杯", desc: "希少な産地の豆を1つ記録する", check: function (s) { return countMatching(s, function (d) { return d.rare; }) >= 1; } },
+    { id: "rare5", label: "産地ハンター", desc: "希少な産地を5か国記録する", check: function (s) { return distinct(s, function (d) { return d.rare; }, "country") >= 5; } },
+    { id: "three_regions", label: "三大陸", desc: "アフリカ・アラビア、中南米・カリブ、アジア・太平洋の豆をすべて記録する", check: function (s) {
+      return distinct(s, function (d) { return isBean(d) && d.region !== "blend"; }, "region") >= 3;
+    }},
+    { id: "roasts", label: "焙煎度くらべ", desc: "浅煎り/中煎り/深煎りの豆をすべて記録する", check: function (s) { return distinct(s, isBean, "roast") >= 3; } },
+    { id: "noted", label: "記録魔", desc: "追加情報を書いた記録を5件残す", check: function (s) { return s.filter(function (l) { return l.note; }).length >= 5; } },
+    { id: "both", label: "二刀流", desc: "ドリンクと豆をどちらも記録する", check: function (s) { return countMatching(s, isDrink) > 0 && countMatching(s, isBean) > 0; } },
+    { id: "drip_home", label: "おうちカフェ", desc: "ドリップOKのドリンクを3杯記録する", check: function (s) { return countMatching(s, function (d) { return d.tool === "drip"; }) >= 3; } },
+    { id: "favorite", label: "推し発見", desc: "「好み」評価を3杯記録する", check: function (s) { return s.filter(function (l) { return l.preference === 3; }).length >= 3; } },
+    { id: "repeater", label: "リピーター", desc: "同じコーヒーを3回記録する", check: function (s) {
+      var c = {}; s.forEach(function (l) { c[l.drinkId] = (c[l.drinkId] || 0) + 1; });
+      return Object.keys(c).some(function (k) { return c[k] >= 3; });
+    }},
+    { id: "early_bird", label: "朝の一杯", desc: "朝5時〜9時に記録する", check: function (s) {
+      return s.some(function (l) { var h = new Date(l.timestamp).getHours(); return h >= 5 && h < 9; });
+    }}
+  ];
+  function earnedBadgeIds(s) { var e = {}; BADGES.forEach(function (b) { if (b.check(s)) e[b.id] = true; }); return e; }
+
+  /* ============================================================
+     SCORING
+     ============================================================ */
+  function computeResults(genre, answers) {
+    var g = GENRES[genre];
+    var scored = DRINKS.filter(function (d) { return d.genre === genre; }).map(function (d) {
+      var score = 0;
+      g.numericKeys.forEach(function (k) { if (typeof answers[k] === "number") score += answers[k] * (d.tags[k] || 0); });
+      if (answers[g.categoryKey] && d[g.categoryKey] === answers[g.categoryKey]) score += 3;
+      g.flagKeys.forEach(function (k) { if (typeof answers[k] === "boolean") score += (!!d[k] === answers[k]) ? 3 : -3; });
+      var own = stock.filter(function (l) { return l.drinkId === d.id; });
+      var liked = own.filter(function (l) { return l.preference === 3; }).length;
+      var disliked = own.filter(function (l) { return l.preference === 1; }).length;
+      var similar = stock.filter(function (l) {
+        var prev = findDrink(l.drinkId);
+        return l.preference === 3 && prev && prev.genre === genre && tagDistance(prev, d) <= 2;
+      }).length;
+      var historyScore = Math.min(liked, 2) * 0.75 - Math.min(disliked, 2) * 1.5 +
+        Math.min(similar, 3) * 0.2 + (own.length ? 0 : 0.35) +
+        (genre === "bean" && !passport(stock)[d.country] ? 0.25 : 0);
+      return { d: d, score: score + historyScore };
+    });
+    scored.sort(function (a, b) { return b.score - a.score || a.d.id.localeCompare(b.d.id); });
+    return scored.slice(0, 5).map(function (x) { return x.d; });
+  }
+  function tagDistance(a, b) {
+    var sum = 0;
+    GENRES[a.genre].numericKeys.forEach(function (k) { var diff = (a.tags[k] || 0) - (b.tags[k] || 0); sum += diff * diff; });
+    return sum;
+  }
+  function relatedDrinks(d) {
+    var catKey = GENRES[d.genre].categoryKey;
+    var pool = DRINKS.filter(function (x) { return x.id !== d.id && x.genre === d.genre; });
+    var by = function (a, b) { return tagDistance(a, d) - tagDistance(b, d); };
+    var same = pool.filter(function (x) { return x[catKey] === d[catKey]; }).sort(by);
+    var other = pool.filter(function (x) { return x[catKey] !== d[catKey]; }).sort(by);
+    return same.concat(other).slice(0, 4);
+  }
+
+  /* ============================================================
+     STATE / ROUTER
+     ============================================================ */
+  function emptyFilters(genre) { var f = {}; GENRES[genre].filters.forEach(function (g) { f[g.key] = []; }); return f; }
+  function freshState() {
+    return { screen: "start", genre: "drink", registryGenre: "bean", answers: {}, qIndex: 0, results: [],
+      detailId: null, pendingPref: null, pendingNote: "", pendingPlace: "", pendingDate: "", searchText: "", filters: emptyFilters("bean"), country: null, justStamped: false };
+  }
+  var state = freshState();
+  var history = [];
+  function navigate(screen, patch) {
+    history.push(Object.assign({}, state, { justStamped: false }));
+    state = Object.assign({}, state, { screen: screen, justStamped: false },
+      screen === "detail" ? { pendingPref: null, pendingNote: "", pendingPlace: "", pendingDate: "" } : {}, patch || {});
+    render();
+    window.scrollTo(0, 0);
+  }
+  function goBack() { state = history.length ? history.pop() : freshState(); render(); }
+
+  function hasUnsavedInput() {
+    return state.screen === "question" || (state.screen === "detail" && (state.pendingPref || state.pendingNote || state.pendingPlace || state.pendingDate));
+  }
+  function confirmGoHome() {
+    if (state.screen === "start") return;
+    var msg = hasUnsavedInput() ? "表紙に戻りますか?<br>入力中の内容は失われます" : "表紙に戻りますか?";
+    var overlay = el('<div class="modal-overlay"><div class="modal-card"><div class="modal-text">' + msg +
+      '</div><div class="modal-actions"><button class="modal-cancel">キャンセル</button><button class="modal-confirm">表紙に戻る</button></div></div></div>');
+    document.body.appendChild(overlay);
+    overlay.addEventListener("click", function (e) { if (e.target === overlay) overlay.remove(); });
+    overlay.querySelector(".modal-cancel").addEventListener("click", function () { overlay.remove(); });
+    overlay.querySelector(".modal-confirm").addEventListener("click", function () {
+      overlay.remove(); history = []; state = freshState(); render();
+    });
+  }
+  function topbar(showBack) {
+    var wrap = el('<div class="topbar"></div>');
+    if (showBack) {
+      var b = el('<button class="back-btn" aria-label="戻る">&lsaquo;</button>');
+      b.addEventListener("click", goBack);
+      wrap.appendChild(b);
+    }
+    var logo = el('<button class="logo" aria-label="表紙に戻る">COFFEE LOG</button>');
+    logo.addEventListener("click", confirmGoHome);
+    wrap.appendChild(logo);
+    wrap.appendChild(el('<span class="topbar-mark" aria-hidden="true">A COFFEE JOURNAL</span>'));
+    return wrap;
+  }
+
+  /* ============================================================
+     STAMP
+     ============================================================ */
+  function hash(str) { var h = 0; for (var i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0; return Math.abs(h); }
+  var SHAPES = ["circle", "rect", "oval", "cut"];
+  function stampHtml(key, opt) {
+    opt = opt || {};
+    var c = COUNTRIES[key];
+    var h = hash(key);
+    var shape = SHAPES[h % SHAPES.length] + (c.en.length >= 12 ? " len-l" : c.en.length >= 9 ? " len-m" : "") + (c.ja.length >= 7 ? " ja-l" : "");
+    if (opt.empty) {
+      return '<div class="stamp ' + shape + ' empty"><div class="stamp-en">' + c.en + '</div><div class="stamp-ja">' + c.ja + "</div></div>";
+    }
+    var rot = ((h >> 3) % 21) - 10;
+    var ink = Object.keys(COUNTRIES).indexOf(key) % 2 ? " indigo" : ""; // 並び順で朱と藍を交互に
+    return '<div class="stamp ' + shape + ink + (opt.pressed ? " pressed" : "") + '" style="--r:' + rot + 'deg">' +
+      '<div class="stamp-en">' + c.en + '</div><div class="stamp-ja">' + c.ja + "</div>" +
+      (opt.sub ? '<div class="stamp-sub">' + opt.sub + "</div>" : "") + "</div>";
+  }
+
+  function swatchBg(d) { return d.colorTo ? "linear-gradient(to bottom, " + d.color + ", " + d.colorTo + ")" : d.color; }
+  function swatchHtml(d, size) {
+    var inner = '<div class="swatch swatch-' + size + " shape-" + d.shape + '" style="background:' + swatchBg(d) + ';"></div>';
+    return size === "sm" ? '<div class="swatch-slot">' + inner + "</div>" : inner;
+  }
+  function legend(genre) {
+    var row = el('<div class="legend-row"></div>');
+    var items = genre === "drink"
+      ? Object.keys(SHAPE_LABEL).map(function (k) { return { cls: "shape-" + k, bg: "var(--ink-3)", label: SHAPE_LABEL[k] }; })
+      : Object.keys(ROAST_LABEL).map(function (k) { return { cls: "shape-bean", bg: ROAST_COLOR[k], label: ROAST_LABEL[k] }; });
+    items.forEach(function (it) {
+      row.appendChild(el('<div class="legend-item"><div class="swatch swatch-md ' + it.cls + '" style="background:' + it.bg + ';"></div><div class="legend-label">' + it.label + "</div></div>"));
+    });
+    return row;
+  }
+  function rowButton(inner, onClick) {
+    var b = el('<button class="row">' + inner + '<span class="row-arrow">&rsaquo;</span></button>');
+    b.addEventListener("click", onClick);
+    return b;
+  }
+
+  /* ============================================================
+     SCREENS
+     ============================================================ */
+  function renderStart(root) {
+    root.appendChild(topbar(false));
+    root.appendChild(el('<div class="hero-intro"><div class="eyebrow">YOUR COFFEE JOURNEY</div>' +
+      '<h1>一杯から、世界を旅する。</h1><p>今日の一杯を見つけて、味わった国を記録しよう。</p></div>'));
+    var p = passport(stock);
+    var got = COUNTRY_KEYS.filter(function (k) { return p[k]; });
+    var recent = Object.keys(p).sort(function (a, b) { return p[b].last < p[a].last ? -1 : 1; }).slice(0, 3);
+
+    var cover = el(
+      '<button class="cover"><div class="cover-kicker">COFFEE ORIGIN PASSPORT</div><div class="cover-title">産地パスポート</div>' +
+      '<div class="cover-sub">豆を記録すると、その国のスタンプが押されます</div>' +
+      '<div class="cover-stamps">' +
+      (recent.length
+        ? recent.map(function (k) { return stampHtml(k, { sub: fmtDate(p[k].first).slice(2) }); }).join("")
+        : '<div class="cover-empty">まだスタンプがありません。<br>最初の一杯はどこの国にしますか?</div>') +
+      '</div><div class="cover-foot"><span>集めた国</span><span class="cover-count">' + got.length + " / " + COUNTRY_KEYS.length + "</span></div></button>"
+    );
+    cover.addEventListener("click", function () { navigate("passport"); });
+    root.appendChild(cover);
+
+    var today = dailyBean();
+    root.appendChild(el('<div class="section-heading"><h2>今日の一杯</h2><small>DAILY PICK</small></div>'));
+    var todayCard = el('<section class="daily-card"><div class="daily-eyebrow">TODAY’S COFFEE</div>' +
+      '<div class="daily-name">' + esc(today.name) + '</div><div class="daily-reason">' +
+      (p[today.country] ? '今日はこの産地をもう一度。' : 'まだ飲んでいない国の豆を試してみませんか。') +
+      '</div><div class="daily-actions"><button class="daily-detail">この豆を見る</button><button class="daily-quiz">気分から選ぶ</button></div></section>');
+    todayCard.querySelector('.daily-detail').addEventListener('click', function () { navigate('detail', { detailId: today.id, pendingPref: null, pendingNote: '', pendingPlace: '', pendingDate: '' }); });
+    todayCard.querySelector('.daily-quiz').addEventListener('click', function () { navigate('genreSelect'); });
+    root.appendChild(todayCard);
+    var loved = stock.filter(function (l) { return l.preference === 3; }).map(function (l) { return findDrink(l.drinkId); }).filter(Boolean);
+    var favorite = topValue(loved.filter(function (d) { return d.genre === 'bean' && d.country !== 'blend'; }).map(function (d) { return d.country; }));
+    var roast = topValue(loved.filter(function (d) { return d.genre === 'bean'; }).map(function (d) { return d.roast; }));
+    root.appendChild(el('<section><div class="section-heading"><h2>旅の記録</h2><small>MY PROFILE</small></div><div class="profile-grid">' +
+      '<div class="profile-item">飲んだ記録<b>' + stock.length + ' 杯</b></div><div class="profile-item">訪れた産地<b>' + got.length + ' / ' + COUNTRY_KEYS.length + ' か国</b></div>' +
+      '<div class="profile-item">お気に入りの国<b>' + (favorite ? COUNTRIES[favorite].ja : 'これから') + '</b></div>' +
+      '<div class="profile-item">好きな焙煎<b>' + (roast ? ROAST_LABEL[roast] : 'これから') + '</b></div></div></section>'));
+
+    root.appendChild(el('<div class="stat-line"><div><b>' +
+      Object.keys(earnedBadgeIds(stock)).length + "</b>/ " + BADGES.length + " バッジ</div></div>"));
+
+    root.appendChild(el('<div class="section-heading"><h2>コーヒーを楽しむ</h2><small>EXPLORE</small></div>'));
+    var rows = el('<div class="rows"></div>');
+    [
+      { icon: "✦", t: "質問で選ぶ", s: "今の気分から5つ提案", go: function () { navigate("genreSelect"); } },
+      { icon: "◈", t: "登録一覧", s: "豆" + genreCount("bean") + "種とドリンク" + genreCount("drink") + "種から探す", go: function () { navigate("registry", { searchText: "" }); } },
+      { icon: "☕", t: "記録", s: "飲んだものと追加情報の一覧", go: function () { navigate("stock"); } },
+      { icon: "✧", t: "達成バッジ", s: "集めた国や記録の数で増えていく", go: function () { navigate("badges"); } }
+    ].forEach(function (it) {
+      rows.appendChild(rowButton('<span class="nav-symbol" aria-hidden="true">' + it.icon + '</span><div class="row-body"><div class="row-title">' + it.t + '</div><div class="row-sub">' + it.s + "</div></div>", it.go));
+    });
+    root.appendChild(rows);
+  }
+
+  function renderPassport(root) {
+    root.appendChild(topbar(true));
+    var p = passport(stock);
+    root.appendChild(el('<h1 class="page-title">産地パスポート</h1>'));
+    root.appendChild(el('<div class="page-lead">' + countryCount(p) + ' / ' + COUNTRY_KEYS.length +
+      ' か国。あと ' + (COUNTRY_KEYS.length - countryCount(p)) + ' か国で制覇。未達成の国を押すと、試せる豆が見られます。</div>'));
+    root.appendChild(el('<div class="passport-progress" role="progressbar" aria-label="産地の達成率" aria-valuemin="0" aria-valuemax="' + COUNTRY_KEYS.length + '" aria-valuenow="' + countryCount(p) + '"><span style="width:' + (100 * countryCount(p) / COUNTRY_KEYS.length) + '%"></span></div>'));
+    ["africa", "latam", "asia", "blend"].forEach(function (region) {
+      var keys = Object.keys(COUNTRIES).filter(function (k) { return COUNTRIES[k].region === region; });
+      var n = keys.filter(function (k) { return p[k]; }).length;
+      var sec = el("<section></section>");
+      sec.appendChild(el('<div class="region-title">' + REGION_LABEL[region] + "<span>" + n + " / " + keys.length + "</span></div>"));
+      var grid = el('<div class="stamp-grid"></div>');
+      keys.forEach(function (k) {
+        var e = p[k];
+        var cell = el('<button class="stamp-cell" aria-label="' + COUNTRIES[k].ja + '">' +
+          '<div class="stamp-slot">' + stampHtml(k, e ? { sub: fmtDate(e.first).slice(2) } : { empty: true }) + '</div>' +
+          '<div class="stamp-count">' + (e ? e.count + "回" : (COUNTRIES[k].rare ? "希少" : "")) + "&nbsp;</div></button>");
+        if (!e) cell.querySelector('.stamp-count').textContent = '未訪問 · 豆を見る';
+        cell.addEventListener("click", function () { navigate("country", { country: k }); });
+        grid.appendChild(cell);
+      });
+      sec.appendChild(grid);
+      root.appendChild(sec);
+    });
+  }
+
+  function renderCountry(root) {
+    root.appendChild(topbar(true));
+    var k = state.country, c = COUNTRIES[k];
+    var e = passport(stock)[k];
+    root.appendChild(el('<div class="country-hero">' +
+      stampHtml(k, e ? { sub: fmtDate(e.first), pressed: state.justStamped } : { empty: true }) + "</div>"));
+    root.appendChild(el('<div style="text-align:center;"><h1 class="page-title">' + c.ja + "</h1>" +
+      '<div class="row-sub">' + REGION_LABEL[c.region] + (c.rare ? '<span class="flag rare">希少</span>' : "") +
+      (e ? "|" + e.count + "回記録" : "|まだ記録がありません") + "</div></div>"));
+
+    var logs = stock.filter(function (l) { var d = findDrink(l.drinkId); return d && d.country === k; }).slice().reverse();
+    if (logs.length) {
+      root.appendChild(el('<div class="section-title" style="margin-bottom:-12px;">この国の記録</div>'));
+      root.appendChild(logRows(logs));
+    }
+    var beans = DRINKS.filter(function (d) { return d.country === k; });
+    root.appendChild(el('<div class="section-title" style="margin-bottom:-12px;">この国の豆</div>'));
+    var rows = el('<div class="rows"></div>');
+    beans.forEach(function (d) {
+      rows.appendChild(rowButton(swatchHtml(d, "sm") + '<div class="row-body"><div class="row-title">' + d.name +
+        '</div><div class="row-sub">' + d.line + '</div><div class="brew-line">1人分|' + brewSummary(d) + "</div></div>",
+        function () { navigate("detail", { detailId: d.id, pendingPref: null, pendingNote: "" }); }));
+    });
+    root.appendChild(rows);
+  }
+
+  function renderGenreSelect(root) {
+    root.appendChild(topbar(true));
+    root.appendChild(el('<h1 class="page-title">今日はどっち?</h1>'));
+    var rows = el('<div class="rows"></div>');
+    ["bean", "drink"].forEach(function (key) {
+      rows.appendChild(rowButton('<div class="row-body"><div class="row-title">' + GENRES[key].label + '</div><div class="row-sub">' + GENRES[key].pickSub + "</div></div>",
+        function () { navigate("question", { genre: key, answers: {}, qIndex: 0 }); }));
+    });
+    root.appendChild(rows);
+  }
+
+  function renderQuestion(root) {
+    root.appendChild(topbar(true));
+    var qs = GENRES[state.genre].questions, q = qs[state.qIndex];
+    var prog = el('<div class="progress"></div>');
+    for (var i = 0; i < qs.length; i++) prog.appendChild(el('<div class="dot' + (i <= state.qIndex ? " active" : "") + '"></div>'));
+    root.appendChild(prog);
+    root.appendChild(el('<div class="q-count">Q' + (state.qIndex + 1) + " / " + qs.length + "</div>"));
+    root.appendChild(el('<h1 class="q-title">' + q.title + "</h1>"));
+    var opts = el('<div class="options"></div>');
+    q.options.forEach(function (o) {
+      var b = el('<button class="option-btn">' + o.label + "</button>");
+      b.addEventListener("click", function () {
+        var next = Object.assign({}, state.answers); next[q.key] = o.value;
+        if (state.qIndex + 1 < qs.length) navigate("question", { answers: next, qIndex: state.qIndex + 1 });
+        else navigate("results", { answers: next, results: computeResults(state.genre, next) });
+      });
+      opts.appendChild(b);
+    });
+    root.appendChild(opts);
+  }
+
+  function diagnosisText(genre, a) {
+    var scene = a.scene || 0, body = a.body || 0;
+    var sceneP = scene < 0 ? "くつろぎの時間" : scene > 0 ? "シャキッとしたい時" : "いつものひととき";
+    var bodyP = body < 0 ? "軽やか" : body > 0 ? "濃厚" : "ちょうどいい濃さ";
+    if (genre === "drink") {
+      var sw = a.sweetness || 0;
+      var sweetP = sw < 0 ? "甘さ控えめ" : sw > 0 ? "甘め" : "ほんのり甘め";
+      var tempP = a.iced === true ? "アイス" : a.iced === false ? "ホット" : "ホットもアイスも";
+      var milkP = a.milk === true ? "ミルク派" : a.milk === false ? "ストレート派" : "ミルクは気分次第派";
+      return sceneP + "に、" + sweetP + "で" + bodyP + "な" + tempP + "を選ぶ、" + milkP + "。";
+    }
+    var acid = a.acidity || 0;
+    var acidP = acid > 0 ? "酸味" : acid < 0 ? "苦味" : "バランス";
+    var regionP = a.region ? REGION_LABEL[a.region] + "に惹かれる" : "産地にこだわらない";
+    return sceneP + "に、" + bodyP + "な" + acidP + "を楽しむ、" + regionP + "旅人。";
+  }
+
+  function renderResults(root) {
+    root.appendChild(topbar(true));
+    var text = diagnosisText(state.genre, state.answers);
+    var visa = el('<div class="visa"><div class="visa-label">あなたのコーヒータイプ</div><div class="visa-text">' + text +
+      '</div><button class="visa-share">この診断をシェア</button></div>');
+    var share = visa.querySelector(".visa-share");
+    share.addEventListener("click", function () {
+      var t = text + "\nおすすめは「" + (state.results[0] ? state.results[0].name : "") + "」でした。 #COFFEELOG";
+      if (navigator.share) navigator.share({ title: "COFFEE LOG診断", text: t }).catch(function () {});
+      else if (navigator.clipboard) navigator.clipboard.writeText(t).then(function () {
+        share.textContent = "コピーしました"; setTimeout(function () { share.textContent = "この診断をシェア"; }, 1500);
+      }).catch(function () {});
+    });
+    root.appendChild(visa);
+    root.appendChild(el('<h1 class="page-title">今日のおすすめ</h1>'));
+    root.appendChild(legend(state.genre));
+    var list = el('<div class="rows" style="margin-top:-10px;"></div>');
+    state.results.forEach(function (d, i) {
+      var b = el('<button class="result' + (i === 0 ? " best" : "") + '">' + swatchHtml(d, "sm") +
+        '<div class="row-body"><div class="row-title">' + d.name + flags(d) + '</div><div class="row-sub">' +
+        (d.genre === "bean" && d.name.indexOf(COUNTRIES[d.country].ja) === -1 ? COUNTRIES[d.country].ja + "|" : "") + d.line + "</div>" +
+        (d.genre === "bean" ? '<div class="brew-line">1人分|' + brewSummary(d) + "</div>" : "") +
+        '</div><span class="row-arrow">&rsaquo;</span></button>');
+      b.addEventListener("click", function () { navigate("detail", { detailId: d.id, pendingPref: null, pendingNote: "" }); });
+      list.appendChild(b);
+    });
+    root.appendChild(list);
+  }
+
+  function traitsSection(d) {
+    var wrap = el('<div class="section"><div class="section-title">特徴</div></div>');
+    function add(axis) {
+      var pct = (((d.tags[axis.key] || 0) + 2) / 4) * 100;
+      wrap.appendChild(el('<div class="trait-row"><div class="trait-labels"><span>' + axis.left + "</span><span>" + axis.right +
+        '</span></div><div class="trait-track"><div class="trait-dot" style="left:calc(6px + (100% - 12px) * ' + (pct / 100) + ');"></div></div></div>'));
+    }
+    GENRES[d.genre].traitAxes.forEach(add);
+    wrap.appendChild(el('<div class="trait-gap"></div>'));
+    add(SCENE_AXIS);
+    return wrap;
+  }
+  function brewSection(d) {
+    var b = brewFor(d);
+    return el('<div class="section"><div class="section-title">ハンドドリップの淹れ方(1人分)</div>' +
+      '<dl class="brew-meta"><dt>出来上がり</dt><dd>約150ml(カップ1杯)</dd>' +
+      "<dt>粉</dt><dd>" + b.dose + "g(" + b.grind + ")</dd><dt>お湯</dt><dd>" + b.water + "ml、" + b.temp + "℃前後</dd></dl>" +
+      '<ol class="steps"><li>お湯を30ml注いで、' + b.bloom + "秒蒸らす</li>" +
+      "<li>中心から「の」の字を描くように、残りの" + (b.water - 30) + "mlを3回に分けて注ぐ</li>" +
+      "<li>" + b.time + "前後、約150mlになったらドリッパーを外す(最後まで落としきらない)</li></ol>" +
+      '<div class="brew-note">向いている器具:' + b.device + "</div>" +
+      (b.tip ? '<div class="brew-note">コツ:' + b.tip + "</div>" : "") + "</div>");
+  }
+  function drinkRecipeSection(d) {
+    var body = Array.isArray(d.recipe)
+      ? '<ol class="steps">' + d.recipe.map(function (s) { return "<li>" + s + "</li>"; }).join("") + "</ol>"
+      : "<div>" + d.recipe + "</div>";
+    var note = d.tool === "machine" ? '<div class="brew-note">エスプレッソマシンが必要です</div>'
+      : d.tool === "special" ? '<div class="brew-note">ドリッパーとは別の専用器具を使います</div>' : "";
+    return el('<div class="section"><div class="section-title">' + (Array.isArray(d.recipe) ? "作り方(1人分)" : "作り方") + "</div>" + body + note + "</div>");
+  }
+
+  function renderDetail(root) {
+    root.appendChild(topbar(true));
+    var d = findDrink(state.detailId), g = GENRES[d.genre];
+    var p = passport(stock);
+    var head = el('<div class="detail-head"></div>');
+    if (d.genre === "bean") {
+      var st = el('<button aria-label="' + COUNTRIES[d.country].ja + 'のページ" style="width:84px;flex-shrink:0;">' +
+        stampHtml(d.country, p[d.country] ? { sub: fmtDate(p[d.country].first).slice(2) } : { empty: true }) + "</button>");
+      st.addEventListener("click", function () { navigate("country", { country: d.country }); });
+      head.appendChild(st);
+    }
+    head.appendChild(el('<div><h1 class="detail-name">' + d.name + "</h1>" +
+      '<div class="detail-sub">' + (d.genre === "bean" ? REGION_LABEL[d.region] + "|" + subLabel(d) : subLabel(d)) + flags(d) + "</div>" +
+      '<div class="detail-line">' + d.line + "</div></div>"));
+    root.appendChild(head);
+
+    root.appendChild(d.genre === "bean" ? brewSection(d) : drinkRecipeSection(d));
+    root.appendChild(traitsSection(d));
+    root.appendChild(el('<div class="section"><div class="section-title">見た目</div><div class="look">' + swatchHtml(d, "lg") + "<div>" + d.look + "</div></div></div>"));
+    if (d.genre === "bean") root.appendChild(el('<div class="section"><div class="section-title">豆のデータ</div>' + d.recipe + "</div>"));
+    root.appendChild(el('<div class="section"><div class="section-title">豆知識</div>' + d.trivia + "</div>"));
+
+    var rel = el('<div class="section"><div class="section-title">' + g.relatedLabel + '</div><div class="chip-row"></div></div>');
+    relatedDrinks(d).forEach(function (x) {
+      var c = el('<button class="chip">' + x.name + "</button>");
+      c.addEventListener("click", function () { navigate("detail", { detailId: x.id, pendingPref: null, pendingNote: "" }); });
+      rel.querySelector(".chip-row").appendChild(c);
+    });
+    root.appendChild(rel);
+
+    // 記録フォーム
+    var rec = el('<div class="record"></div>');
+    rec.appendChild(el('<div class="field-label">記録する</div>'));
+    var prefRow = el('<div class="pref-row"></div>');
+    [3, 2, 1].forEach(function (v) {
+      var b = el('<button class="pref-btn' + (state.pendingPref === v ? " selected" : "") + '">' + PREF_LABEL[v] + "</button>");
+      b.addEventListener("click", function () {
+        state.pendingPref = v;
+        prefRow.querySelectorAll(".pref-btn").forEach(function (x) { x.classList.remove("selected"); });
+        b.classList.add("selected");
+        err.textContent = "";
+      });
+      prefRow.appendChild(b);
+    });
+    rec.appendChild(prefRow);
+    rec.appendChild(el('<label class="field-label" for="note">追加情報<span class="field-hint">任意</span></label>'));
+    var ta = el('<textarea id="note" maxlength="300" placeholder="' +
+      (d.genre === "bean" ? "例:グジ ○○農園/88℃にしたら甘さが出た" : "例:砂糖少なめで作った/氷を多めにした") + '"></textarea>');
+    ta.value = state.pendingNote || "";
+    ta.addEventListener("input", function () { state.pendingNote = ta.value; });
+    rec.appendChild(ta);
+    rec.appendChild(el('<label class="field-label" for="place">お店・商品名<span class="field-hint">任意</span></label>'));
+    var place = el('<input class="record-input" id="place" type="text" maxlength="100" placeholder="例:TAKAMURA COFFEE">');
+    place.value = state.pendingPlace || '';
+    place.addEventListener('input', function () { state.pendingPlace = place.value; });
+    rec.appendChild(place);
+    rec.appendChild(el('<label class="field-label" for="drank-date">飲んだ日</label>'));
+    var date = el('<input class="record-input" id="drank-date" type="date">');
+    date.value = state.pendingDate || new Date().toLocaleDateString('en-CA');
+    date.max = new Date().toLocaleDateString('en-CA');
+    date.addEventListener('change', function () { state.pendingDate = date.value; });
+    rec.appendChild(date);
+    var err = el('<div class="err"></div>');
+    rec.appendChild(err);
+    var save = el('<button class="primary-btn">' + (d.genre === "bean" ? "飲んだ(スタンプを押す)" : "飲んだ") + "</button>");
+    save.addEventListener("click", function () {
+      if (!state.pendingPref) { err.textContent = "好みを選んでから記録してください"; return; }
+      if (!date.value || date.value > date.max) { err.textContent = '飲んだ日を確認してください'; return; }
+      var now = new Date(), parts = date.value.split('-');
+      var isToday = date.value === date.max;
+      var drank = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]), isToday ? now.getHours() : 12, isToday ? now.getMinutes() : 0);
+      if (isNaN(drank.getTime()) || drank.getFullYear() !== Number(parts[0]) || drank.getMonth() !== Number(parts[1]) - 1 || drank.getDate() !== Number(parts[2])) {
+        err.textContent = '飲んだ日を確認してください'; return;
+      }
+      var next = stock.concat([{ drinkId: d.id, timestamp: drank.toISOString(), preference: state.pendingPref,
+        note: (state.pendingNote || '').trim(), place: (state.pendingPlace || '').trim() }]);
+      if (!saveStock(next)) { err.textContent = '保存できませんでした。ブラウザの保存設定を確認してください'; return; }
+      stock = next;
+      state.pendingPref = null; state.pendingNote = ''; state.pendingPlace = ''; state.pendingDate = '';
+      if (d.genre === "bean") navigate("country", { country: d.country, justStamped: true });
+      else navigate("stock");
+    });
+    rec.appendChild(save);
+    root.appendChild(rec);
+  }
+
+  function bucket(v) { return v < 0 ? -1 : v > 0 ? 1 : 0; }
+  function matchesFilters(d, filters) {
+    return GENRES[d.genre].filters.every(function (grp) {
+      var sel = filters[grp.key] || [];
+      if (!sel.length) return true;
+      var v;
+      if (typeof d.tags[grp.key] === "number") v = bucket(d.tags[grp.key]);
+      else if (typeof sel[0] === "boolean") v = !!d[grp.key];
+      else v = d[grp.key];
+      return sel.indexOf(v) !== -1;
+    });
+  }
+
+  function renderRegistry(root) {
+    root.appendChild(topbar(true));
+    root.appendChild(el('<h1 class="page-title">登録一覧</h1>'));
+    var tabs = el('<div class="tab-row"></div>');
+    ["bean", "drink"].forEach(function (key) {
+      var t = el('<button class="tab-btn' + (state.registryGenre === key ? " active" : "") + '">' + GENRES[key].label + "</button>");
+      t.addEventListener("click", function () {
+        if (state.registryGenre === key) return;
+        state.registryGenre = key; state.filters = emptyFilters(key); render();
+      });
+      tabs.appendChild(t);
+    });
+    root.appendChild(tabs);
+
+    var input = el('<input class="search-input" type="search" placeholder="' + (state.registryGenre === "bean" ? "名前や国で検索" : "名前で検索") + '">');
+    input.value = state.searchText;
+    root.appendChild(input);
+
+    var fwrap = el('<div class="filters"></div>');
+    GENRES[state.registryGenre].filters.forEach(function (grp) {
+      var g = el('<div><div class="filter-group-label">' + grp.label + '</div><div class="chip-row"></div></div>');
+      grp.options.forEach(function (o) {
+        var list = state.filters[grp.key];
+        var c = el('<button class="chip' + (list.indexOf(o.value) !== -1 ? " active" : "") + '">' + o.label + "</button>");
+        c.addEventListener("click", function () {
+          var i = list.indexOf(o.value);
+          if (i === -1) list.push(o.value); else list.splice(i, 1);
+          render();
+        });
+        g.querySelector(".chip-row").appendChild(c);
+      });
+      fwrap.appendChild(g);
+    });
+    var reset = el('<button class="filter-reset">絞り込みをリセット</button>');
+    reset.addEventListener("click", function () { state.filters = emptyFilters(state.registryGenre); render(); });
+    fwrap.appendChild(reset);
+    root.appendChild(fwrap);
+
+    var listWrap = el("<div></div>");
+    root.appendChild(listWrap);
+    function renderList() {
+      listWrap.innerHTML = "";
+      var q = state.searchText.trim();
+      var items = DRINKS.filter(function (d) {
+        if (d.genre !== state.registryGenre) return false;
+        var hay = d.name + (d.country ? COUNTRIES[d.country].ja + COUNTRIES[d.country].en.toLowerCase() : "");
+        return (!q || hay.indexOf(q) !== -1 || hay.indexOf(q.toLowerCase()) !== -1) && matchesFilters(d, state.filters);
+      });
+      if (!items.length) { listWrap.appendChild(el('<div class="empty">条件に合うものがありません。<br>絞り込みを減らしてみてください</div>')); return; }
+      listWrap.appendChild(el('<div class="row-meta" style="margin-bottom:6px;">' + items.length + "件</div>"));
+      var rows = el('<div class="rows"></div>');
+      items.forEach(function (d) {
+        rows.appendChild(rowButton(swatchHtml(d, "sm") + '<div class="row-body"><div class="row-title">' + d.name + flags(d) +
+          '</div><div class="row-sub">' + subLabel(d) + "</div>" +
+          (d.genre === "bean" ? '<div class="brew-line">1人分|' + brewSummary(d) + "</div>" : "") + "</div>",
+          function () { navigate("detail", { detailId: d.id, pendingPref: null, pendingNote: "" }); }));
+      });
+      listWrap.appendChild(rows);
+    }
+    input.addEventListener("input", function () { state.searchText = input.value; renderList(); });
+    renderList();
+  }
+
+  function logRows(logs) {
+    var rows = el('<div class="rows"></div>');
+    logs.forEach(function (l) {
+      var d = findDrink(l.drinkId);
+      var inner = (d ? swatchHtml(d, "sm") : "") + '<div class="row-body"><div class="row-title">' + (d ? d.name : "不明") +
+        '</div>' + (l.place ? '<div class="row-sub">' + esc(l.place) + '</div>' : '') +
+        (l.note ? '<div class="row-sub note">「' + esc(l.note) + '」</div>' : '') +
+        '<div class="row-meta">' + fmtDate(l.timestamp) + "|" + (d ? (d.genre === "bean" ? COUNTRIES[d.country].ja : "ドリンク") : "") +
+        "|" + (PREF_LABEL[l.preference] || "") + "</div></div>";
+      rows.appendChild(d ? rowButton(inner, function () { navigate("detail", { detailId: d.id, pendingPref: null, pendingNote: "" }); })
+        : el('<div class="row">' + inner + "</div>"));
+    });
+    return rows;
+  }
+  function renderStock(root) {
+    root.appendChild(topbar(true));
+    root.appendChild(el('<h1 class="page-title">記録</h1>'));
+    if (!stock.length) {
+      root.appendChild(el('<div class="empty">まだ記録がありません。<br>「質問で選ぶ」か「登録一覧」から一杯選んでみてください</div>'));
+      return;
+    }
+    root.appendChild(logRows(stock.slice().reverse()));
+  }
+
+  function renderBadges(root) {
+    root.appendChild(topbar(true));
+    var earned = earnedBadgeIds(stock);
+    root.appendChild(el('<h1 class="page-title">達成バッジ</h1>'));
+    root.appendChild(el('<div class="page-lead">' + Object.keys(earned).length + " / " + BADGES.length + " 達成</div>"));
+    var rows = el('<div class="rows"></div>');
+    BADGES.forEach(function (b) {
+      var ok = !!earned[b.id];
+      rows.appendChild(el('<div class="row"><div class="row-body"><div class="row-title">' + b.label + '</div><div class="row-sub">' + b.desc +
+        '</div></div><span class="badge-state' + (ok ? " earned" : "") + '">' + (ok ? "達成" : "未達成") + "</span></div>"));
+    });
+    root.appendChild(rows);
+  }
+
+  function renderBottomNav() {
+    var nav = el('<nav class="bottom-nav" aria-label="メインメニュー"></nav>');
+    [
+      { screen: 'start', label: 'ホーム', icon: '⌂' },
+      { screen: 'registry', label: '探す', icon: '⌕' },
+      { screen: 'passport', label: 'パスポート', icon: '✧' },
+      { screen: 'stock', label: '記録', icon: '▤' }
+    ].forEach(function (item) {
+      var active = state.screen === item.screen;
+      var b = el('<button class="' + (active ? 'active' : '') + '"' + (active ? ' aria-current="page"' : '') +
+        '><span class="nav-icon" aria-hidden="true">' + item.icon + '</span>' + item.label + '</button>');
+      b.addEventListener('click', function () {
+        if (active) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+        if (item.screen === 'start') { confirmGoHome(); return; }
+        navigate(item.screen, item.screen === 'registry' ? { searchText: '' } : {});
+      });
+      nav.appendChild(b);
+    });
+    return nav;
+  }
+
+  var SCREENS = { start: renderStart, passport: renderPassport, country: renderCountry, genreSelect: renderGenreSelect,
+    question: renderQuestion, results: renderResults, detail: renderDetail, registry: renderRegistry, stock: renderStock, badges: renderBadges };
+  function render() {
+    var app = document.getElementById("app");
+    app.innerHTML = "";
+    var root = el('<div class="screen"></div>');
+    app.appendChild(root);
+    (SCREENS[state.screen] || renderStart)(root);
+    app.appendChild(renderBottomNav());
+  }
+  render();
+})();
+</script>
+</body>
+</html>
