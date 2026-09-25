@@ -4,7 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>COFFEE LOG | 一杯から世界を旅する</title>
-<meta name="robots" content="noindex,nofollow">
+<meta name="robots" content="index,follow">
+<!-- GA4: one automatic page_view per document load. -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NPCQ5LCWFT"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  // Keep Supabase callback codes/tokens out of Analytics URLs.
+  gtag('config', 'G-NPCQ5LCWFT', {
+    page_location: window.location.origin + window.location.pathname
+  });
+</script>
 <link rel="icon" type="image/svg+xml" href="/icon.svg">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#f7f3e9">
@@ -977,6 +988,38 @@ window.COFFEE_LOG_CONFIG = {
   function esc(s) {
     return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; });
   }
+  // Analytics must never interrupt rendering, authentication or saving.
+  function trackEvent(name, params) {
+    try { if (typeof window.gtag === 'function') window.gtag('event', name, params || {}); }
+    catch (e) { /* Analytics is optional. */ }
+  }
+  function coffeeParams(d) {
+    var p = { coffee_id: d.id, coffee_name: d.name, coffee_genre: d.genre };
+    if (d.country) p.origin_country = d.country;
+    if (d.roast) p.roast = d.roast;
+    return p;
+  }
+  var lastViewKey = '', signupTracked = {};
+  function trackScreen() {
+    var key = state.screen + (state.screen === 'detail' ? ':' + state.detailId : '');
+    if (key === lastViewKey) return;
+    lastViewKey = key;
+    var d = state.screen === 'detail' && findDrink(state.detailId);
+    if (d) trackEvent('coffee_view', coffeeParams(d));
+  }
+  function trackSignup(data, requestedAt) {
+    var user = data && data.user;
+    // Existing/obfuscated accounts and confirmation resends are not new registrations.
+    if (!user || !user.id || !user.identities || !user.identities.length ||
+        !(Date.parse(user.created_at) >= requestedAt - 60000)) return;
+    var key = 'coffeelog_ga4_signup_' + user.id;
+    if (signupTracked[key]) return;
+    try { if (window.localStorage.getItem(key)) return; } catch (e) {}
+    signupTracked[key] = true;
+    try { window.localStorage.setItem(key, '1'); } catch (e) {}
+    // Account creation success; email confirmation may still be pending.
+    trackEvent('sign_up', { method: 'email', email_confirmation_required: !data.session });
+  }
   function findDrink(id) { return DRINKS.find(function (x) { return x.id === id; }); }
   function genreCount(g) { return DRINKS.filter(function (d) { return d.genre === g; }).length; }
   function subLabel(d) {
@@ -1541,7 +1584,11 @@ window.COFFEE_LOG_CONFIG = {
     var rows = el('<div class="rows"></div>');
     ["bean", "drink"].forEach(function (key) {
       rows.appendChild(rowButton('<div class="row-body"><div class="row-title">' + GENRES[key].label + '</div><div class="row-sub">' + GENRES[key].pickSub + "</div></div>",
-        function () { navigate("question", { genre: key, answers: {}, qIndex: 0 }); }));
+        function () {
+          var run = { completed: false };
+          navigate("question", { genre: key, answers: {}, qIndex: 0, diagnosisRun: run });
+          trackEvent('diagnosis_start', { coffee_genre: key });
+        }));
     });
     root.appendChild(rows);
   }
@@ -1560,7 +1607,16 @@ window.COFFEE_LOG_CONFIG = {
       b.addEventListener("click", function () {
         var next = Object.assign({}, state.answers); next[q.key] = o.value;
         if (state.qIndex + 1 < qs.length) navigate("question", { answers: next, qIndex: state.qIndex + 1 });
-        else navigate("results", { answers: next, results: computeResults(state.genre, next) });
+        else {
+          var run = state.diagnosisRun;
+          navigate("results", { answers: next, results: computeResults(state.genre, next) });
+          // History entries share this run, so Back/re-answer does not count twice.
+          if (run && !run.completed) {
+            run.completed = true;
+            trackEvent('diagnosis_complete', { coffee_genre: state.genre,
+              result_count: state.results.length, recommended_coffee_id: state.results[0] ? state.results[0].id : '' });
+          }
+        }
       });
       opts.appendChild(b);
     });
@@ -1714,6 +1770,7 @@ window.COFFEE_LOG_CONFIG = {
     rec.appendChild(err);
     var save = el('<button class="primary-btn">' + (d.genre === "bean" ? "飲んだ(スタンプを押す)" : "飲んだ") + "</button>");
     save.addEventListener("click", async function () {
+      if (save.disabled) return;
       if (!state.pendingPref) { err.textContent = "好みを選んでから記録してください"; return; }
       if (!date.value || date.value > date.max) { err.textContent = '飲んだ日を確認してください'; return; }
       var now = new Date(), parts = date.value.split('-');
@@ -1725,9 +1782,13 @@ window.COFFEE_LOG_CONFIG = {
       var entry = { drinkId: d.id, timestamp: drank.toISOString(), preference: state.pendingPref,
         note: (state.pendingNote || '').trim(), place: (state.pendingPlace || '').trim() };
       var earnedBefore = earnedBadgeIds(stock);
+      var newOrigin = d.genre === 'bean' && d.country !== 'blend' && !passport(stock)[d.country];
+      var storageMethod = authUser ? 'cloud' : 'local';
       save.disabled = true;
       try { await addLog(entry); }
       catch (e) { err.textContent = '保存できませんでした: ' + e.message; save.disabled = false; return; }
+      trackEvent('coffee_record', Object.assign(coffeeParams(d), { storage_method: storageMethod, preference: entry.preference }));
+      if (newOrigin) trackEvent('passport_stamp', Object.assign(coffeeParams(d), { country_count: countryCount(passport(stock)) }));
       var newlyEarned = !authUser && BADGES.find(function (b) {
         return !earnedBefore[b.id] && b.check(stock);
       });
@@ -1903,10 +1964,11 @@ window.COFFEE_LOG_CONFIG = {
       var email = card.querySelector('#login-email').value.trim();
       var password = card.querySelector('#login-password');
       var button = card.querySelector('.auth-submit');
-      if (!card.reportValidity()) return;
+      if (button.disabled || !card.reportValidity()) return;
       if (mode === 'signup' && window.location.protocol !== 'https:') {
         message.textContent = '確認メールを使うにはHTTPSの公開ページで開いてください。'; return;
       }
+      var signupRequestedAt = Date.now();
       button.disabled = true; message.textContent = '処理中…';
       try {
         var result = mode === 'signup' ? await api.auth.signUp({ email: email, password: password.value,
@@ -1915,6 +1977,7 @@ window.COFFEE_LOG_CONFIG = {
             redirectTo: window.location.origin + window.location.pathname }) :
           await api.auth.signInWithPassword({ email: email, password: password.value });
         if (result.error) throw result.error;
+        if (mode === 'signup') trackSignup(result.data, signupRequestedAt);
         if (mode === 'signup' && !result.data.session) {
           pendingSignupEmail = email;
           render();
@@ -2015,6 +2078,7 @@ window.COFFEE_LOG_CONFIG = {
     app.appendChild(root);
     (SCREENS[state.screen] || renderStart)(root);
     app.appendChild(renderBottomNav());
+    trackScreen();
   }
   render();
   initializeAuth().catch(function (e) { syncError = e.message || String(e); render(); });
