@@ -2011,7 +2011,9 @@ window.COFFEE_LOG_CONFIG = {
       try {
         var response = await api.auth.updateUser({ password: form.querySelector('input').value });
         if (response.error) throw response.error;
-        isPasswordRecovery = false; state.screen = 'account'; render();
+        isPasswordRecovery = false;
+        // After recovery, show the normal login form with the new password.
+        state.authMode = 'login'; state.screen = 'account'; render();
       } catch (error) { status.textContent = '設定できませんでした: ' + (error.message || '再試行してください'); button.disabled = false; }
     });
   }
