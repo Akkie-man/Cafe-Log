@@ -452,10 +452,15 @@
   .stamp.empty svg > g:first-child { stroke-dasharray:2.5 3.5; }
   .cover-stamps .stamp { color:#dcae81; width:min(86px,calc((100% - 28px)/3)); flex:0 1 86px; min-width:0; }
   /* The opened passport is a pale paper leaf; keep the dark cover on Home. */
-  .screen.passport-page { background:#fffdfa; margin:-12px -20px -64px; padding:12px 20px 110px;
+  .screen.passport-page {
+    --paper:#fffdfa; --paper-2:#f6f2eb; --line:#d0c9bc;
+    --ink:#26372f; --ink-2:#4f5e54; --ink-3:#536257;
+    --vermilion:#a64a36; --indigo:#365c72; --accent-bg:#f4e9dd;
+    color:var(--ink); background:var(--paper); margin:-12px -20px -64px; padding:12px 20px 110px;
     min-height:100dvh; box-shadow:inset 3px 0 0 #e8e3d9; }
   .passport-page .stamp-cell { background:#fffdfa; }
   .passport-page .stamp-cell:hover { background:#f6f2eb; }
+  .passport-page .stamp.empty { opacity:.9; }
   .passport-page .next-card { background:#f8f5ef; }
   @media(max-width:360px) { .screen.passport-page { margin-left:-15px; margin-right:-15px; padding-left:15px; padding-right:15px; } }
   .stamp-cell { min-height:132px; border:0; border-radius:0; background:transparent;
@@ -1503,6 +1508,7 @@ window.COFFEE_LOG_CONFIG = {
   }
 
   function renderCountry(root) {
+    root.classList.add('passport-page');
     root.appendChild(topbar(true));
     var k = state.country, c = COUNTRIES[k];
     var e = passport(stock)[k];
