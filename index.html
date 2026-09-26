@@ -333,6 +333,11 @@
   .modal-actions { display: flex; gap: 10px; }
   .modal-actions button { flex: 1; padding: 12px 0; border-radius: 8px; border: 1px solid var(--line); font-size: 13px; }
   .modal-actions .modal-confirm { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .reading-card { max-height: min(78vh, 620px); overflow: auto; max-width: 390px; }
+  .reading-card h2 { font-size: 19px; line-height: 1.4; margin-bottom: 14px; }
+  .reading-card h3 { font-size: 12px; color: var(--vermilion); letter-spacing: .12em; margin: 18px 0 6px; }
+  .reading-card p { margin: 0; line-height: 1.8; }
+  .reading-open { margin-top: 10px; color: var(--indigo); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
   /* 2026 visual refresh: a tactile travel journal */
   :root {
     --paper:#f7f3e9; --paper-2:#eee9de; --line:#d7d0c2;
@@ -482,6 +487,59 @@
   .stamp-cell .stamp { max-width:94px; }
   .stamp-cell:hover { background:var(--accent-bg); }
   .stamp-count { letter-spacing:.04em; }
+  .world-map { position:relative; min-height:330px; margin:18px 0 24px; overflow:hidden; border:1px solid var(--line); border-radius:14px; background:linear-gradient(180deg,#eaf1f1,#f8f5ef); }
+  .world-map::before { content:""; position:absolute; inset:0; opacity:.22; background:linear-gradient(90deg,transparent 24.8%,var(--line) 25%,transparent 25.2%,transparent 49.8%,var(--line) 50%,transparent 50.2%,transparent 74.8%,var(--line) 75%,transparent 75.2%),linear-gradient(0deg,transparent 24.8%,var(--line) 25%,transparent 25.2%,transparent 49.8%,var(--line) 50%,transparent 50.2%,transparent 74.8%,var(--line) 75%,transparent 75.2%); }
+  .map-page { min-width:0; width:100%; }
+  .map-page .page-title { margin:0 0 8px; }
+  .map-page .page-lead { margin:0 0 16px; }
+  .map-dot { position:absolute; transform:translate(-50%,-50%); width:17px; height:17px; padding:0; border:2px solid var(--paper); border-radius:50%; background:var(--line); box-shadow:0 0 0 1px var(--ink-3); color:transparent; }
+  .map-dot.visited { background:var(--vermilion); box-shadow:0 0 0 1px var(--vermilion); }
+  .map-dot.focused { outline:3px solid var(--indigo); outline-offset:3px; z-index:2; }
+  .map-country-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:12px; }
+  .map-country-list button { display:flex; align-items:center; gap:7px; min-width:0; padding:9px 8px; border:1px solid var(--line); border-radius:8px; background:var(--paper-2); text-align:left; font-size:12px; }
+  .map-country-list button::before { content:""; flex:0 0 9px; width:9px; height:9px; border-radius:50%; background:var(--line); }
+  .map-country-list button.visited::before { background:var(--vermilion); }
+  .map-region-title { grid-column:1/-1; margin-top:8px; color:var(--ink-2); font-size:11px; font-weight:700; letter-spacing:.08em; }
+  .geo-map-wrap { position:relative; overflow:hidden; border:1px solid var(--line); border-radius:14px; background:#edf3f1; }
+  .geo-map { display:block; width:100%; height:auto; touch-action:none; cursor:grab; }
+  .geo-map:active { cursor:grabbing; }
+  .geo-map .country { fill:#dce5e1; stroke:#fffdfa; stroke-width:.55; vector-effect:non-scaling-stroke; }
+  .geo-map .country.visited { fill:var(--vermilion); }
+  .geo-map-controls { position:absolute; right:9px; top:9px; display:flex; gap:5px; }
+  .geo-map-controls button { width:32px; height:32px; border:1px solid var(--line); border-radius:8px; background:rgba(255,253,250,.92); font-size:20px; line-height:1; }
+  .geo-map-note { margin:8px 0 0; color:var(--ink-3); font-size:11px; }
+  .passport-switch { display:flex; gap:4px; padding:4px; border-radius:12px; background:var(--paper-2); margin:16px 0; border:1px solid var(--line); }
+  .passport-switch button { flex:1; min-height:44px; border:0; border-radius:8px; background:transparent; color:var(--ink-2); font:inherit; }
+  .passport-switch button[aria-pressed="true"] { background:var(--ink); color:var(--paper); }
+  .geo-map { aspect-ratio:5/3; }
+  .geo-map .country { fill:#cad5cf; stroke:#f7f6ef; }
+  .geo-map .country.origin { fill:#a6bcb0; cursor:pointer; }
+  .geo-map .country.visited { fill:var(--vermilion); }
+  .geo-map .country.focused { fill:#365c72; stroke:#f7f6ef; stroke-width:.55; }
+  .geo-map .country:focus { outline:none; }
+  .geo-map .country:focus-visible { fill:#365c72; }
+  .screen > *, .row-body, .map-selection { min-width:0; }
+  .detail-name, .row-title, .modal-card { overflow-wrap:anywhere; }
+  .modal-card { max-height:calc(100dvh - 48px); overflow-y:auto; }
+  .reading-card { max-height: min(82dvh, 720px); overscroll-behavior:contain; }
+  .reading-card a { color:var(--indigo); text-underline-offset:3px; }
+  .reading-card .reading-sources { font-size:12px; margin-top:18px; }
+  .reading-card .reading-sources a { display:block; padding:6px 0; }
+  @media(max-width:360px) { .modal-overlay { padding:12px; } .reading-card { padding:18px; } .detail-head { gap:10px; } }
+  .geo-map-controls button { min-width:44px; width:auto; height:44px; padding:0 10px; color:var(--ink); }
+  .geo-map-controls .zoom-reset { font-size:13px; }
+  .map-search { display:flex; flex-direction:column; align-items:stretch; gap:8px; margin:16px 0; font-size:13px; }
+  .map-search select { width:100%; min-width:0; min-height:44px; border:1px solid var(--line); border-radius:8px; background:var(--paper); color:var(--ink); padding:8px; font:inherit; font-size:16px; }
+  .map-selection { padding:20px; margin-top:16px; border:1px solid var(--line); border-radius:14px; background:var(--paper-2); }
+  .map-selection h2 { font-size:23px; margin:8px 0; }
+  .map-selection p { font-size:14px; line-height:1.8; margin:8px 0 16px; }
+  .map-selection button { min-height:44px; padding:10px 16px; border:0; border-radius:8px; background:var(--ink); color:var(--paper); font:inherit; }
+  .map-card-meta,.map-small-note { font-size:12px; color:var(--ink-2); }
+  .map-legend { display:flex; flex-wrap:wrap; gap:8px 14px; color:var(--ink-2); font-size:12px; margin-bottom:12px; }
+  .map-legend span::before { content:""; display:inline-block; width:9px; height:9px; margin-right:4px; border-radius:50%; background:var(--line); vertical-align:-1px; }
+  .map-legend span:first-child::before { background:var(--vermilion); }
+  .map-legend span:nth-child(2)::before { background:#a6bcb0; }
+  .map-legend span:nth-child(3)::before { background:#365c72; }
   .country-hero .stamp { width:160px; }
   .stamp.pressed { animation:stamp-impact .7s cubic-bezier(.16,.74,.25,1) both; }
   @keyframes stamp-impact { 0% { transform:rotate(var(--r)) scale(1.45); opacity:0; filter:blur(3px); }
@@ -806,6 +864,57 @@ window.COFFEE_LOG_CONFIG = {
       "イエメンのモカとインドネシアのジャワ島の豆を合わせたもので、最古のブレンドと言われる", "深い茶色")
   ];
   DRINKS = DRINKS.concat(BEANS);
+  // Sensory illustrations, not cupping results for a particular farm or lot.
+  var FLAVOR_NOTES = {
+    ethiopia_yirgacheffe:['ジャスミン・レモン','紅茶のように軽やか','花の香りがふわりと残る'],
+    ethiopia_natural:['熟したベリー','果実を思わせる丸み','甘い果実香が続く'],
+    kenya:['カシス・グレープフルーツ','明るい酸と厚み','果実の輪郭がくっきり'],
+    tanzania:['柑橘','ほどよいコク','キレのある後味'],
+    rwanda:['紅茶','繊細で軽やか','やさしい甘い印象'],
+    burundi:['赤い果実','みずみずしい甘酸っぱさ','明るい余韻'],
+    uganda:['チョコレート','しっかりした厚み','香ばしく丸い後味'],
+    malawi:['穏やかな甘い香り','軽い飲み口','すっと引く余韻'],
+    zambia:['柑橘','明るくすっきり','軽快な後味'],
+    zimbabwe:['ワインを思わせる果実香','まろやか','甘酸っぱい余韻'],
+    drc:['濃い果実香','ほどよい厚み','果実感が残る'],
+    st_helena:['穏やかな香り','やわらかく軽い','繊細な余韻'],
+    yemen:['ワイン・ドライフルーツ','複雑で厚みがある','重なり合う果実香'],
+    brazil:['ローストナッツ・チョコ','丸くなめらか','香ばしさが残る'],
+    colombia:['キャラメルを思わせる甘い香り','酸とコクが釣り合う','丸みのある後味'],
+    guatemala:['カカオ・香ばしさ','しっかりしたコク','ほろ苦い余韻'],
+    costa_rica_honey:['蜜を思わせる甘い香り','丸みと明るい酸','甘い印象が続く'],
+    panama_geisha:['ジャスミン・ベルガモット','繊細で軽やか','花と柑橘の香り'],
+    honduras:['キャラメル','やさしい酸と丸み','穏やかな甘い後味'],
+    el_salvador:['ミルクチョコ','なめらか','甘い香りの余韻'],
+    nicaragua:['ナッツ','まろやか','香ばしく穏やか'],
+    mexico:['穏やかな香ばしさ','軽い飲み口','すっきりした後味'],
+    peru:['ナッツを思わせる香り','やさしく軽い','澄んだ後味'],
+    bolivia:['花を思わせる香り','明るく繊細','澄んだ酸の余韻'],
+    ecuador:['赤い果実を思わせる香り','軽やかな酸','すっきりした余韻'],
+    blue_mountain:['穏やかな甘い香り','軽やかで丸い','やわらかな後味'],
+    cuba:['ローストした香ばしさ','苦味とコク','落ち着いた余韻'],
+    dominican:['チョコレート','やわらかな酸','丸い甘さの印象'],
+    haiti:['素朴な香ばしさ','力強いコク','厚みのある後味'],
+    puerto_rico:['穏やかな甘い香り','軽くまろやか','やさしい後味'],
+    mandheling:['ハーブ・スパイス','重厚な口当たり','長く残るほろ苦さ'],
+    toraja:['スパイス','なめらかなコク','落ち着いた香り'],
+    vietnam_robusta:['力強いロースト香','苦味と厚み','香ばしさが長く残る'],
+    kona:['穏やかな甘い香り','軽やかでやさしい酸','すっきりした後味'],
+    png:['やわらかな果実香','ほどよい厚み','丸みのある後味'],
+    india_malabar:['スパイス・香ばしさ','酸が穏やかで重厚','まろやかな余韻'],
+    yunnan:['ナッツを思わせる香り','穏やかで丸い','やさしい甘い印象'],
+    thailand:['ナッツ','穏やかな酸','香ばしい甘さの印象'],
+    myanmar:['明るい果実香','甘酸っぱく軽快','果実の余韻'],
+    laos:['素朴な香ばしさ','丸いコク','穏やかな後味'],
+    timor:['ハーブ','やさしい口当たり','落ち着いた香り'],
+    philippines:['しっかりした香ばしさ','苦味と厚み','ほろ苦い後味'],
+    taiwan:['お茶を思わせる香り','繊細で澄んだ飲み口','甘い香りが残る'],
+    nepal:['穏やかな香り','澄んだ酸と軽さ','すっと引く後味'],
+    japan_okinawa:['やさしい甘い香り','軽くすっきり','穏やかな余韻'],
+    australia:['穏やかな香ばしさ','丸く軽い飲み口','やさしい後味'],
+    espresso_blend:['チョコ・ローストナッツ','ミルクと合わせやすい厚み','ほろ苦く長い余韻'],
+    mocha_java:['果実香とスパイス','果実感に重なるコク','複雑で香ばしい余韻']
+  };
   DRINKS.forEach(function (d) { if (d.genre === "bean") d.color = ROAST_COLOR[d.roast]; });
   /* ---------- ドリンク:必要な道具 ----------
      drip    : ハンドドリップの道具だけで作れる
@@ -1024,7 +1133,7 @@ window.COFFEE_LOG_CONFIG = {
   function genreCount(g) { return DRINKS.filter(function (d) { return d.genre === g; }).length; }
   function subLabel(d) {
     if (d.genre === "drink") return BASE_LABEL[d.base];
-    return COUNTRIES[d.country].ja + "・" + ROAST_LABEL[d.roast];
+    return COUNTRIES[d.country].ja + "・紹介の目安：" + ROAST_LABEL[d.roast];
   }
   function flags(d) {
     var h = "";
@@ -1072,11 +1181,11 @@ window.COFFEE_LOG_CONFIG = {
   }
   function fromRow(r) {
     return { id: r.id, drinkId: r.drink_id, timestamp: r.drank_at,
-      preference: r.preference, note: r.note || '', place: r.place || '' };
+      preference: r.preference, note: r.note || '', place: r.place || '', roast: r.roast || null };
   }
   function toRow(l, uid) {
     return { id: l.id, user_id: uid, drink_id: l.drinkId, drank_at: l.timestamp,
-      preference: l.preference, note: l.note || '', place: l.place || '' };
+      preference: l.preference, note: l.note || '', place: l.place || '', roast: l.roast || null };
   }
   async function syncAccount(user) {
     if (!api || !user || cloudBusy) return;
@@ -1094,7 +1203,7 @@ window.COFFEE_LOG_CONFIG = {
       }
       var all = [], offset = 0, page;
       do {
-        page = await api.from('coffee_logs').select('id,drink_id,drank_at,preference,note,place')
+        page = await api.from('coffee_logs').select('id,drink_id,drank_at,preference,note,place,roast')
           .eq('user_id', user.id).order('drank_at', { ascending: true }).order('id', { ascending: true })
           .range(offset, offset + 499);
         if (page.error) throw page.error;
@@ -1172,6 +1281,7 @@ window.COFFEE_LOG_CONFIG = {
     values.forEach(function (v) { if (v) counts[v] = (counts[v] || 0) + 1; });
     return Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a] || a.localeCompare(b); })[0];
   }
+  function recordedRoast(logs){return topValue(logs.filter(function(l){var d=findDrink(l.drinkId);return d&&d.genre==='bean'&&l.preference===3&&ROAST_LABEL[l.roast];}).map(function(l){return l.roast;}));}
   function evaluated(genre) {
     var latest = {};
     stock.forEach(function (l) {
@@ -1191,7 +1301,7 @@ window.COFFEE_LOG_CONFIG = {
   function dailyBean() {
     var p = passport(stock), favorites = evaluated('bean').filter(function (e) { return e.preference === 3; })
       .map(function (e) { return e.d; });
-    var roast = topValue(favorites.map(function (d) { return d.roast; }));
+    var roast = recordedRoast(stock);
     var pool = DRINKS.filter(function (d) { return d.genre === "bean" && d.country !== "blend" && !avoidsDislike(d); });
     if (!pool.length) pool = DRINKS.filter(function (d) { return d.genre === "bean" && d.country !== "blend"; });
     pool.sort(function (a, b) {
@@ -1208,7 +1318,7 @@ window.COFFEE_LOG_CONFIG = {
   // 評価を根拠に未訪問の産地を選ぶ。履歴が少ない場合は好みを断定しない。
   function tasteProfile(genre) {
     var liked = evaluated(genre).filter(function (e) { return e.preference === 3; }).map(function (e) { return e.d; });
-    return { liked: liked, roast: topValue(liked.map(function (d) { return d.roast; })),
+    return { liked: liked, roast: recordedRoast(stock),
       country: topValue(liked.filter(function (d) { return d.country !== 'blend'; }).map(function (d) { return d.country; })) };
   }
   function nextBean() {
@@ -1254,7 +1364,7 @@ window.COFFEE_LOG_CONFIG = {
     { id: "three_regions", label: "三大陸", desc: "アフリカ・アラビア、中南米・カリブ、アジア・太平洋の豆をすべて記録する", check: function (s) {
       return distinct(s, function (d) { return isBean(d) && d.region !== "blend"; }, "region") >= 3;
     }},
-    { id: "roasts", label: "焙煎度くらべ", desc: "浅煎り/中煎り/深煎りの豆をすべて記録する", check: function (s) { return distinct(s, isBean, "roast") >= 3; } },
+    { id: "roasts", label: "焙煎度くらべ", desc: "浅煎り/中煎り/深煎りの豆をすべて記録する", check: function (s) { return new Set(s.filter(function(l){var d=findDrink(l.drinkId);return d&&isBean(d)&&ROAST_LABEL[l.roast];}).map(function(l){return l.roast;})).size>=3; } },
     { id: "noted", label: "記録魔", desc: "追加情報を書いた記録を5件残す", check: function (s) { return s.filter(function (l) { return l.note; }).length >= 5; } },
     { id: "both", label: "二刀流", desc: "ドリンクと豆をどちらも記録する", check: function (s) { return countMatching(s, isDrink) > 0 && countMatching(s, isBean) > 0; } },
     { id: "drip_home", label: "おうちカフェ", desc: "ドリップOKのドリンクを3杯記録する", check: function (s) { return countMatching(s, function (d) { return d.tool === "drip"; }) >= 3; } },
@@ -1331,21 +1441,21 @@ window.COFFEE_LOG_CONFIG = {
   function emptyFilters(genre) { var f = {}; GENRES[genre].filters.forEach(function (g) { f[g.key] = []; }); return f; }
   function freshState() {
     return { screen: "start", genre: "drink", registryGenre: "bean", answers: {}, qIndex: 0, results: [],
-      detailId: null, pendingPref: null, pendingNote: "", pendingPlace: "", pendingDate: "", searchText: "", filters: emptyFilters("bean"), country: null, authMode: 'login', justStamped: false, justEarnedBadge: null };
+      detailId: null, pendingPref: null, pendingRoast: null, pendingNote: "", pendingPlace: "", pendingDate: "", searchText: "", filters: emptyFilters("bean"), country: null, authMode: 'login', justStamped: false, justEarnedBadge: null };
   }
   var state = freshState();
   var history = [];
   function navigate(screen, patch) {
     history.push(Object.assign({}, state, { justStamped: false }));
     state = Object.assign({}, state, { screen: screen, justStamped: false, justEarnedBadge: null },
-      screen === "detail" ? { pendingPref: null, pendingNote: "", pendingPlace: "", pendingDate: "" } : {}, patch || {});
+      screen === "detail" ? { pendingPref: null, pendingRoast: null, pendingNote: "", pendingPlace: "", pendingDate: "" } : {}, patch || {});
     render();
     window.scrollTo(0, 0);
   }
   function goBack() { state = history.length ? history.pop() : freshState(); render(); }
 
   function hasUnsavedInput() {
-    return state.screen === "question" || (state.screen === "detail" && (state.pendingPref || state.pendingNote || state.pendingPlace || state.pendingDate));
+    return state.screen === "question" || (state.screen === "detail" && (state.pendingPref || state.pendingRoast || state.pendingNote || state.pendingPlace || state.pendingDate));
   }
   function confirmGoHome() {
     if (state.screen === "start") return;
@@ -1495,12 +1605,12 @@ window.COFFEE_LOG_CONFIG = {
       '<div class="daily-name">' + esc(today.name) + '</div><div class="daily-reason">' +
       (next ? esc(next.reason) : '今日はこの産地をもう一度。') +
       '</div><div class="daily-actions"><button class="daily-detail">この豆を見る</button><button class="daily-quiz">気分から選ぶ</button></div></section>');
-    todayCard.querySelector('.daily-detail').addEventListener('click', function () { navigate('detail', { detailId: today.id, pendingPref: null, pendingNote: '', pendingPlace: '', pendingDate: '' }); });
+    todayCard.querySelector('.daily-detail').addEventListener('click', function () { navigate('detail', { detailId: today.id, pendingPref: null, pendingRoast: null, pendingNote: '', pendingPlace: '', pendingDate: '' }); });
     todayCard.querySelector('.daily-quiz').addEventListener('click', function () { navigate('genreSelect'); });
     root.appendChild(todayCard);
     var loved = stock.filter(function (l) { return l.preference === 3; }).map(function (l) { return findDrink(l.drinkId); }).filter(Boolean);
     var favorite = topValue(loved.filter(function (d) { return d.genre === 'bean' && d.country !== 'blend'; }).map(function (d) { return d.country; }));
-    var roast = topValue(loved.filter(function (d) { return d.genre === 'bean'; }).map(function (d) { return d.roast; }));
+    var roast = recordedRoast(stock);
     var likedBeans = tasteProfile('bean').liked;
     var avgAcidity = likedBeans.reduce(function (n, d) { return n + d.tags.acidity; }, 0) / (likedBeans.length || 1);
     var tasteText = likedBeans.length < 2 ? '記録が増えると見えてきます' :
@@ -1521,12 +1631,13 @@ window.COFFEE_LOG_CONFIG = {
     root.appendChild(saveStatus());
     root.appendChild(el('<div class="page-lead">' + countryCount(p) + ' / ' + COUNTRY_KEYS.length +
       ' か国。あと ' + (COUNTRY_KEYS.length - countryCount(p)) + ' か国で制覇。未達成の国を押すと、試せる豆が見られます。</div>'));
+    root.appendChild(passportSwitch(false));
     root.appendChild(el('<div class="passport-progress" role="progressbar" aria-label="産地の達成率" aria-valuemin="0" aria-valuemax="' + COUNTRY_KEYS.length + '" aria-valuenow="' + countryCount(p) + '"><span style="width:' + (100 * countryCount(p) / COUNTRY_KEYS.length) + '%"></span></div>'));
     var next = nextBean();
     if (next) {
       var nextCard = el('<button class="next-card"><div class="daily-eyebrow">NEXT · 次の一杯</div><strong>' + esc(next.bean.name) +
         '</strong><span>' + esc(next.reason) + '</span></button>');
-      nextCard.addEventListener('click', function () { navigate('detail', { detailId: next.bean.id, pendingPref: null, pendingNote: '', pendingPlace: '', pendingDate: '' }); });
+      nextCard.addEventListener('click', function () { navigate('detail', { detailId: next.bean.id, pendingPref: null, pendingRoast: null, pendingNote: '', pendingPlace: '', pendingDate: '' }); });
       root.appendChild(nextCard);
     }
     root.appendChild(el('<div class="section-title">PAST · これまでの産地</div>'));
@@ -1548,6 +1659,118 @@ window.COFFEE_LOG_CONFIG = {
       sec.appendChild(grid);
       root.appendChild(sec);
     });
+  }
+
+  var MAP_POS = {
+    mexico:[16,42], brazil:[31,64], colombia:[25,54], peru:[24,66], bolivia:[29,73], ecuador:[23,60],
+    costa_rica:[21,50], guatemala:[18,47], honduras:[19,50], nicaragua:[19,53], el_salvador:[19,49],
+    jamaica:[27,51], cuba:[25,45], dominican:[29,49], haiti:[28,48], puerto_rico:[31,50],
+    usa:[19,32], canada:[18,20], ethiopia:[57,52], kenya:[58,58], tanzania:[56,63], rwanda:[55,60],
+    burundi:[55,62], uganda:[55,57], malawi:[57,69], zambia:[53,72], zimbabwe:[55,77], drc:[51,62],
+    yemen:[63,49], st_helena:[45,88], india:[71,57], indonesia:[78,78], vietnam:[79,61], thailand:[77,58],
+    myanmar:[75,56], laos:[77,55], timor:[81,79], philippines:[84,64], taiwan:[83,57], nepal:[72,48],
+    china:[75,39], japan:[87,43], australia:[86,84], hawaii:[8,49], png:[87,70]
+  };
+  function mapPosition(k, i) {
+    if (MAP_POS[k]) return MAP_POS[k];
+    var region = COUNTRIES[k].region, base = region === 'africa' ? [56, 64] : region === 'latam' ? [28, 62] : [78, 56];
+    return [base[0] + (i % 4) * 3, base[1] + Math.floor(i / 4) * 4];
+  }
+  var MAP_NAME_TO_KEY = {
+    'Ethiopia':'ethiopia','Kenya':'kenya','Tanzania':'tanzania','Rwanda':'rwanda','Burundi':'burundi','Uganda':'uganda','Malawi':'malawi','Zambia':'zambia','Zimbabwe':'zimbabwe','Democratic Republic of the Congo':'drc','Yemen':'yemen','Saint Helena':'st_helena','Brazil':'brazil','Colombia':'colombia','Guatemala':'guatemala','Costa Rica':'costa_rica','Panama':'panama','Honduras':'honduras','El Salvador':'el_salvador','Nicaragua':'nicaragua','Mexico':'mexico','Peru':'peru','Bolivia':'bolivia','Ecuador':'ecuador','Jamaica':'jamaica','Cuba':'cuba','Dominican Republic':'dominican','Haiti':'haiti','Puerto Rico':'puerto_rico','Indonesia':'indonesia','Vietnam':'vietnam','Thailand':'thailand','Myanmar':'myanmar','Laos':'laos','Timor-Leste':'timor','Philippines':'philippines','Taiwan':'taiwan','Nepal':'nepal','Japan':'japan','Australia':'australia','China':'china','India':'india','Papua New Guinea':'png','United States of America':'hawaii'
+  };
+  function addTopoScript() {
+    return new Promise(function (resolve, reject) {
+      if (window.topojson) return resolve();
+      var s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js';
+      s.onload = resolve; s.onerror = reject; document.head.appendChild(s);
+    });
+  }
+  function polygonPath(coords) {
+    return coords.map(function (p, i) { var x = ((p[0] + 180) / 360) * 1000, y = ((90 - p[1]) / 180) * 500; return (i ? 'L' : 'M') + x.toFixed(2) + ',' + y.toFixed(2); }).join(' ') + 'Z';
+  }
+  function geometryPath(g) {
+    if (g.type === 'Polygon') return g.coordinates.map(polygonPath).join(' ');
+    if (g.type === 'MultiPolygon') return g.coordinates.map(function (p) { return p.map(polygonPath).join(' '); }).join(' ');
+    return '';
+  }
+  function installMapZoom(svg, group, container) {
+    var x=0,y=0,w=1000,h=600,points=new Map(),previous=null,moved=false;
+    function apply(){ w=Math.max(70,Math.min(1000,w)); h=w*.6; x=Math.max(0,Math.min(1000-w,x)); y=Math.max(0,Math.min(500-h,y)); svg.setAttribute('viewBox',[x,y,w,h].join(' ')); }
+    function zoom(f){ var nw=Math.max(70,Math.min(1000,w*f)); x+=(w-nw)/2; y+=(h-nw*.6)/2; w=nw; apply(); }
+    container.querySelector('.zoom-in').onclick=function(){zoom(.7);};
+    container.querySelector('.zoom-out').onclick=function(){zoom(1/.7);};
+    container.querySelector('.zoom-reset').onclick=function(){x=0;y=0;w=1000;apply();};
+    function snapshot(){var a=Array.from(points.values()); return a.length>1?{x:(a[0].x+a[1].x)/2,y:(a[0].y+a[1].y)/2,d:Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)}:{x:a[0].x,y:a[0].y,d:0};}
+    svg.addEventListener('pointerdown',function(e){if(!points.size)moved=false;points.set(e.pointerId,{x:e.clientX,y:e.clientY});previous=snapshot();});
+    svg.addEventListener('pointermove',function(e){if(!points.has(e.pointerId))return;points.set(e.pointerId,{x:e.clientX,y:e.clientY});var next=snapshot(),rect=svg.getBoundingClientRect(),unit=w/rect.width;if(Math.abs(next.x-previous.x)+Math.abs(next.y-previous.y)>2||points.size>1)moved=true;x-=(next.x-previous.x)*unit;y-=(next.y-previous.y)*unit;if(next.d&&previous.d){var ratio=previous.d/next.d,anchorX=x+(next.x-rect.left)*unit,anchorY=y+(next.y-rect.top)*unit,nw=Math.max(70,Math.min(1000,w*ratio));x=anchorX-(anchorX-x)*nw/w;y=anchorY-(anchorY-y)*nw/w;w=nw;}apply();previous=next;});
+    function release(e){points.delete(e.pointerId);previous=points.size?snapshot():null;}
+    svg.addEventListener('pointerup',release);svg.addEventListener('pointercancel',release);
+    svg.addEventListener('pointermove',function(e){if(points.has(e.pointerId)&&moved)svg.setPointerCapture(e.pointerId);});
+    svg.addEventListener('click',function(e){if(moved){e.preventDefault();e.stopImmediatePropagation();}},true);
+    apply();
+    return function(box){w=Math.max(90,Math.min(650,Math.max(box.width*2,box.height*2/.6)));x=box.x+box.width/2-w/2;y=box.y+box.height/2-w*.3;apply();};
+  }
+  function passportSwitch(isMap){
+    var bar=el('<div class="passport-switch" aria-label="パスポートの表示"><button type="button" aria-pressed="'+!isMap+'">スタンプ</button><button type="button" aria-pressed="'+isMap+'">地図</button></div>');
+    bar.children[0].onclick=function(){if(isMap)navigate('passport');};bar.children[1].onclick=function(){if(!isMap)navigate('map',{focusCountry:null});};return bar;
+  }
+  function renderMap(root) {
+    root.classList.add('passport-page');
+    root.appendChild(topbar(true));
+    var p = passport(stock), map = el('<div class="map-page"><h1 class="page-title">産地を地図で見る</h1><div class="page-lead">国の形を選ぶと、その国の豆と記録が見られます。</div><div class="map-legend"><span>訪問済み</span><span>未訪問</span></div><div class="geo-map-wrap"><svg class="geo-map" viewBox="0 0 1000 500" role="img" aria-label="コーヒー産地の世界地図"><rect width="1000" height="500" fill="#edf3f1"/><g class="geo-countries"></g><g class="geo-map-controls"><foreignObject x="0" y="0" width="0" height="0"></foreignObject></g></svg><div class="geo-map-controls"><button class="zoom-out" type="button" aria-label="縮小">−</button><button class="zoom-in" type="button" aria-label="拡大">＋</button></div></div><p class="geo-map-note">国をタップして産地ページへ。拡大・縮小できます。</p><div class="map-country-list"></div></div>');
+    var svg = map.querySelector('.geo-map'), group = svg.querySelector('.geo-countries');
+    svg.setAttribute('role','group');
+    map.querySelector('h1').textContent='産地パスポート';
+    map.querySelector('.page-lead').textContent='飲んだ一杯から、世界が少しずつ色づく。';
+    map.insertBefore(passportSwitch(true),map.querySelector('.map-legend'));
+    map.querySelector('.map-legend').innerHTML='<span>記録あり</span><span>まだ記録なし</span><span>選択中</span>';
+    svg.querySelector('rect').setAttribute('height','600');
+    svg.querySelector('g.geo-map-controls').remove();
+    var reset=el('<button type="button" class="zoom-reset" aria-label="世界全体に戻る">全体</button>');
+    map.querySelector('div.geo-map-controls').appendChild(reset);
+    var focusMap=installMapZoom(svg, group, map), paths={}, selected=null;
+    map.querySelector('.geo-map-note').textContent='指で移動・ピンチで拡大。産地を選ぶと紹介が開きます。';
+    var card=el('<section class="map-selection" aria-live="polite"><strong>次の一杯は、どの産地から？</strong><p>地図の産地を選ぶか、名前から探してみてください。</p></section>');
+    map.insertBefore(card,map.querySelector('.map-country-list'));
+    var chooser=el('<label class="map-search">産地を探す<select aria-label="産地を探す"><option value="">産地を選択</option></select></label>');
+    var select=chooser.querySelector('select');
+    ['africa','latam','asia'].forEach(function(region){
+      var section=document.createElement('optgroup');section.label=REGION_LABEL[region];
+      Object.keys(COUNTRIES).filter(function(k){return COUNTRIES[k].region===region;}).forEach(function(k){var option=document.createElement('option');option.value=k;option.textContent=COUNTRIES[k].ja;section.appendChild(option);});
+      select.appendChild(section);
+    });
+    map.insertBefore(chooser,map.querySelector('.geo-map-wrap'));
+    function choose(k,zoom){
+      if(!COUNTRIES[k])return;selected=k;select.value=k;
+      Object.keys(paths).forEach(function(c){paths[c].classList.toggle('focused',c===k);});
+      var entry=p[k],description=COUNTRY_READING[k]||('この産地の豆を '+DRINKS.filter(function(d){return d.country===k;}).length+' 種類掲載しています。豆のページで味わいや産地の背景をたどれます。'),sentences=description.match(/[^。]+。/g);
+      card.innerHTML='<div class="map-card-meta">'+esc(REGION_LABEL[COUNTRIES[k].region])+' · '+(entry?'記録 '+entry.count+' 杯':'まだ記録なし')+'</div><h2>'+esc(COUNTRIES[k].ja)+'</h2><p>'+esc(sentences?sentences.slice(0,2).join(''):description)+'</p>'+(!paths[k]?'<p class="map-small-note">この縮尺では形を表示できない産地です。名前から豆を探せます。</p>':'')+'<button type="button">この産地の豆と記録を見る →</button>';
+      card.querySelector('button').onclick=function(){navigate('country',{country:k});};
+      if(zoom&&paths[k])focusMap(paths[k].getBBox());
+    }
+    select.onchange=function(){if(select.value)choose(select.value,true);};
+    addTopoScript().then(function () { return fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(function (r) { return r.json(); }); }).then(function (topology) {
+      var countries = topojson.feature(topology, topology.objects.countries).features;
+      countries.forEach(function (f) {
+        var key = MAP_NAME_TO_KEY[f.properties && f.properties.name];
+        if(f.properties.name==='Antarctica')return;
+        if(key==='hawaii'){
+          var islands=f.geometry.coordinates.filter(function(poly){var v=poly[0][0];return v[0]>-161&&v[0]<-154&&v[1]>18&&v[1]<23;});
+          var mainland=document.createElementNS('http://www.w3.org/2000/svg','path');mainland.setAttribute('class','country');mainland.setAttribute('d',geometryPath(f.geometry));group.appendChild(mainland);
+          if(!islands.length)return;f={geometry:{type:'MultiPolygon',coordinates:islands}};
+        }
+        var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('class', 'country' + (key && p[key] ? ' visited' : '') + (key && key === state.focusCountry ? ' focused' : ''));
+        path.setAttribute('d', geometryPath(f.geometry));
+        path.setAttribute('tabindex', key ? '0' : '-1');
+        if (key&&COUNTRIES[key]) { paths[key]=path;path.classList.add('origin');path.setAttribute('role','button');path.setAttribute('aria-label', COUNTRIES[key].ja); path.addEventListener('click', function () { choose(key,false); });path.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();choose(key,false);}}); }
+        group.appendChild(path);
+      });
+      if(state.focusCountry)choose(state.focusCountry,true);
+    }).catch(function () { group.innerHTML = '<text x="500" y="245" text-anchor="middle" fill="#536257" font-size="18">地図を読み込めませんでした</text>'; });
+    map.querySelector('.map-country-list').remove();
+    root.appendChild(map);
   }
 
   function renderCountry(root) {
@@ -1573,7 +1796,7 @@ window.COFFEE_LOG_CONFIG = {
     beans.forEach(function (d) {
       rows.appendChild(rowButton(swatchHtml(d, "sm") + '<div class="row-body"><div class="row-title">' + d.name +
         '</div><div class="row-sub">' + d.line + '</div><div class="brew-line">1人分|' + brewSummary(d) + "</div></div>",
-        function () { navigate("detail", { detailId: d.id, pendingPref: null, pendingNote: "" }); }));
+        function () { navigate("detail", { detailId: d.id, pendingPref: null, pendingRoast: null, pendingNote: "" }); }));
     });
     root.appendChild(rows);
   }
@@ -1666,7 +1889,7 @@ window.COFFEE_LOG_CONFIG = {
         '<div class="result-reason">' + esc(recommendationReason(d, state.genre, adventure)) + '</div>' +
         (d.genre === "bean" ? '<div class="brew-line">1人分|' + brewSummary(d) + "</div>" : "") +
         '</div><span class="row-arrow">&rsaquo;</span></button>');
-      b.addEventListener("click", function () { navigate("detail", { detailId: d.id, pendingPref: null, pendingNote: "" }); });
+      b.addEventListener("click", function () { navigate("detail", { detailId: d.id, pendingPref: null, pendingRoast: null, pendingNote: "" }); });
       list.appendChild(b);
     });
     root.appendChild(list);
@@ -1686,7 +1909,7 @@ window.COFFEE_LOG_CONFIG = {
   }
   function brewSection(d) {
     var b = brewFor(d);
-    return el('<div class="section"><div class="section-title">ハンドドリップの淹れ方(1人分)</div>' +
+    return el('<div class="section"><div class="section-title">ハンドドリップの抽出目安（1人分）</div><p class="brew-note">COFFEE LOGの参考レシピです。豆の焙煎度・挽き方・器具に合わせて調整してください。</p>' +
       '<dl class="brew-meta"><dt>出来上がり</dt><dd>約150ml(カップ1杯)</dd>' +
       "<dt>粉</dt><dd>" + b.dose + "g(" + b.grind + ")</dd><dt>お湯</dt><dd>" + b.water + "ml、" + b.temp + "℃前後</dd></dl>" +
       '<ol class="steps"><li>お湯を30ml注いで、' + b.bloom + "秒蒸らす</li>" +
@@ -1701,7 +1924,55 @@ window.COFFEE_LOG_CONFIG = {
       : "<div>" + d.recipe + "</div>";
     var note = d.tool === "machine" ? '<div class="brew-note">エスプレッソマシンが必要です</div>'
       : d.tool === "special" ? '<div class="brew-note">ドリッパーとは別の専用器具を使います</div>' : "";
-    return el('<div class="section"><div class="section-title">' + (Array.isArray(d.recipe) ? "作り方(1人分)" : "作り方") + "</div>" + body + note + "</div>");
+    return el('<div class="section"><div class="section-title">作り方の目安（1人分）</div><p class="brew-note">COFFEE LOGの参考レシピです。分量や濃さは、器具や好みに合わせて調整してください。</p>' + body + note + "</div>");
+  }
+
+  var COUNTRY_READING = {
+    ethiopia: 'コーヒーの野生種が今も残る、コーヒーの故郷と呼ばれる地域です。小さな農家が持ち寄った実を共同の水洗所や乾燥場で仕上げるため、同じ地名でもロットごとに表情が変わります。',
+    kenya: '東アフリカの高地では、昼夜の寒暖差が実の成熟をゆっくり進めます。大粒を示すAAは味の点数ではなく、スクリーンサイズによる等級です。',
+    colombia: 'アンデスの斜面に農園が連なり、標高や谷向きの違いで収穫時期がずれます。地域名まで見ると、同じコロンビアでも味の違いを探しやすくなります。',
+    brazil: '広い国土に平地から高地まで産地があり、ナチュラル精製の甘い土台感はブレンドにもよく使われます。ブラジルらしさは一つの味ではなく、幅の広さです。',
+    panama: 'ゲイシャは国名ではなく品種名です。パナマの農園で香りの個性が評価され、品評会をきっかけに世界的に知られるようになりました。',
+    indonesia: '島ごとに気候と土壌が異なり、スマトラ式という独特の脱穀工程が重いコクやハーブ感につながります。マンデリンとトラジャを飲み比べると、同じ国の幅が見えてきます。',
+    yemen: '山の斜面に作られた段々畑と、果肉を残して乾かすナチュラル精製が複雑な香りを生みます。モカという言葉の由来になった港の歴史も、名前を覚える手がかりになります。',
+    jamaica: 'ブルーマウンテンという名前は、山脈の限られた地域で生産された豆に使われます。軽やかさと雑味の少なさを楽しむなら、熱いうちだけでなく少し冷めてからも味わいたい豆です.',
+    vietnam: 'ベトナムはロブスタの大産地で、濃い苦味とカフェイン感を活かした練乳コーヒー文化とも結びついています。アラビカだけがコーヒーではない、と気づかせてくれる産地です.',
+    hawaii: 'コナ地区は火山斜面の小さな生産地です。「コナブレンド」はコナ豆を含む配合商品なので、ラベルでブレンド比率を確認すると話の種になります.'
+  };
+  var BEAN_READING = {
+    ethiopia_yirgacheffe: {title:'地名と品種名を分けて読む',text:'イルガチェフェはエチオピアの産地名です。品種欄で見かける「エアルーム」は、単一の品種を厳密に示す言葉ではなく、在来の多様な材料をまとめて呼ぶ場合があります。地名が同じでも、木の系統まで同じとは限りません。\nこのページのウォッシュトと、別掲載のエチオピア・ナチュラルを比べるなら、まず精製の違いに注目できます。ただし別農園の豆では品種や標高も異なるため、香りの差をすべて精製のせいにしないことも大切です。',url:'https://www.aboutcoffee.org/origins/coffee-regions-of-the-world/',source:'National Coffee Association：エチオピアの産地'},
+    kona: {title:'ハワイという島々の中のコナ',text:'ハワイのコーヒーがすべてコナというわけではありません。ハワイ島にはコナのほかカウがあり、カウアイ島にも産地があります。コナはハワイ島の限られた地域を指します。\n「ハワイ産」「コナ」「コナブレンド」は情報の範囲が違う名前です。農園名まで載った豆なら、島、地区、農園と順に場所を絞れます。飲んだ記録にその名前を残すと、次に別のハワイ産を選んだとき、同じ島の一杯なのかまで振り返れます。',url:'https://www.aboutcoffee.org/origins/coffee-regions-of-the-world/',source:'National Coffee Association：ハワイの産地'},
+    guatemala: {title:'国名から、アンティグアという場所へ',text:'グアテマラにはアンティグアのほか、コバンやウエウエテナンゴなどの産地があります。国名より一段細かい地名を読むことで、比較する範囲がはっきりします。\nアンティグアという表示だけでは、単一農園の豆か、地区内の複数農家の豆かは分かりません。農園や生産者の表示があれば、さらに由来を絞れます。「火山のある産地」と「スモーキーな味」も同じ意味ではなく、香ばしさを比べる際には焙煎度もそろえてみたいところです。',url:'https://www.aboutcoffee.org/origins/coffee-regions-of-the-world/',source:'National Coffee Association：グアテマラの産地'},
+    costa_rica_honey: {title:'ハニーという名前の向こう側',text:'蜂蜜のような甘さという味の表現と、ハニープロセスという工程名は別の情報です。工程名が伝えるのは、乾燥時に種の周囲の粘質物を残すという扱い方。蜂蜜を加える製法ではありません。\n味の説明に「甘い」とあっても、砂糖を入れた飲み物と同じ甘さとは限りません。香り、口当たり、酸とのバランスを含めて受け取る表現です。ウォッシュトとの比較では、甘さだけを探すより、余韻の長さや口の中での厚みも記録すると違いを言葉にしやすくなります。',url:'https://www.aboutcoffee.org/beans/processes/',source:'National Coffee Association：ハニープロセス'},
+    panama_geisha: {title:'エチオピアからパナマへ渡った品種',text:'パナマで知られるゲイシャは、1930年代にエチオピアの森林で採集された系統にさかのぼります。研究機関を経て中米に渡り、パナマで育てられた豆が2004年の品評会で注目されました。国名と品種名が重なって見える名前にも、植物が大陸を渡った歴史があります。\nゲイシャという名前だけで香味が保証されるわけではありません。World Coffee Researchは、同じ名前でも遺伝的に異なる材料が流通している点を指摘しています。農園名と品種、精製まで分かる豆なら、その一杯の由来を具体的にたどれます。',url:'https://varieties.worldcoffeeresearch.org/varieties/geisha-panama',source:'World Coffee Research：Geisha'},
+    kenya: {title:'等級の奥にある、ケニアの品種',text:'AAは粒の大きさに関する表示で、品種名ではありません。ケニアの豆で見かけるSL28は、1930年代にスコット研究所で選抜されたアラビカの品種。乾燥への耐性を持つ一方、さび病などへの弱さもあり、栽培のしやすさと味の評価は別の軸です。\n袋にSL28、SL34、Ruiru 11などの表記があれば、AAとは別の情報を読んでいます。同じ等級の豆でも、水洗所や品種構成が違えば比較する意味があります。カシスのような香りという説明も、特定の品種が入っている証拠にはなりません。',url:'https://varieties.worldcoffeeresearch.org/varieties/sl28',source:'World Coffee Research：SL28'},
+    el_salvador: {title:'大きさだけでは語れないパカマラ',text:'パカマラは、エルサルバドルでパカスとマラゴジペを交配して生まれた品種です。大粒という外見に加え、優れたカップ品質の可能性が評価されています。一方、世代を重ねても性質が均一にそろいにくいことがWorld Coffee Researchの品種資料に記されています。\n「パカマラだから同じ味」と考えるより、農園と収穫ごとの差も楽しむ品種です。豆の大きさは見て確かめられますが、それだけで香りや甘さの優劣は決まりません。',url:'https://varieties.worldcoffeeresearch.org/varieties/pacamara',source:'World Coffee Research：Pacamara'},
+    india_malabar: {title:'雨季の空気が仕上げる豆',text:'モンスーン加工は、収穫後の豆を湿った季節風にさらす工程です。インド南西部の沿岸で、空気中の水分を吸った豆は膨らみ、色やカップの印象も変化します。普通の乾燥工程とは異なり、湿気を積極的に利用するところが見どころです。\nその背景には、帆船による長い輸送中に豆が変化した時代の物語があります。現在は輸送任せではなく、加工としてその特徴を作ります。深煎りだから酸が穏やかなのか、収穫後の工程が影響しているのかを考えると、他のインド産との比較も面白くなります。',url:'https://coffeeboard.gov.in/coffee-regions-india.html',source:'Coffee Board of India：産地とスペシャルティコーヒー'}
+  };
+  function processReading(d) {
+    var spec=String(d.recipe||'');
+    if(/ハニー|パルプド/.test(spec))return '果皮や果肉を除き、種の周囲にある粘質物を一部残して乾かす工程です。実を丸ごと乾かすナチュラルとも、粘質物を取り除くウォッシュトとも異なります。「ハニー」は粘り気に由来する名前で、蜂蜜の添加や特定の甘さを保証する表示ではありません。';
+    if(/ナチュラル/.test(spec)&&!/ウォッシュト/.test(spec))return '収穫した実を丸ごと乾燥させ、その後に果皮などを取り除きます。乾燥中は実を返し、雨や過度な発酵を避ける管理が必要です。果実的な印象が出ることがありますが、単に「果肉の甘みが豆に移る」だけで説明できる工程ではありません。';
+    if(/ウォッシュト/.test(spec))return 'ウォッシュトは果肉や粘質物を取り除いてから、種を包む薄い殻を残して乾燥させる方法です。水洗が終われば完成ではなく、乾燥まで含めた管理が品質を左右します。国名が同じ豆でも精製が違えば比較の軸が変わるため、産地名とセットで読む価値があります。';
+    return '';
+  }
+  function openReading(d) {
+    var country = d.country && COUNTRIES[d.country] ? COUNTRIES[d.country].ja : '';
+    var article=BEAN_READING[d.id],process=d.genre==='bean'?processReading(d):'';
+    var background=COUNTRY_READING[d.country]||d.trivia||'';
+    function paragraphs(text){return text.split('\n').map(function(s){return '<p>'+esc(s)+'</p>';}).join('');}
+    var body=article?'<h3>'+esc(article.title)+'</h3>'+paragraphs(article.text):'<h3>'+(d.genre==='bean'?'産地の背景':'この一杯の背景')+'</h3>'+paragraphs(background);
+    if(process)body+='<h3>精製から見える個性</h3>'+paragraphs(process);
+    var references=[];
+    if(article)references.push('<a href="'+article.url+'" target="_blank" rel="noopener noreferrer">'+esc(article.source)+'</a>');
+    if(process)references.push('<a href="https://www.aboutcoffee.org/beans/processes/" target="_blank" rel="noopener noreferrer">National Coffee Association：精製工程</a>');
+    var overlay = el('<div class="modal-overlay"><article class="modal-card reading-card" role="dialog" aria-modal="true" aria-label="' + esc(d.name) + 'の詳しい話">' +
+      '<h2>' + esc(d.name) + '</h2>' +
+      body + (references.length?'<details class="reading-sources"><summary>参考資料</summary>'+references.join('')+'</details>':'')+
+      '<div class="modal-actions" style="margin-top:18px;"><button class="modal-confirm">閉じる</button></div></article></div>');
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', function (e) { if (e.target === overlay) overlay.remove(); });
+    overlay.querySelector('.modal-confirm').addEventListener('click', function () { overlay.remove(); });
   }
 
   function renderDetail(root) {
@@ -1719,17 +1990,29 @@ window.COFFEE_LOG_CONFIG = {
       '<div class="detail-sub">' + (d.genre === "bean" ? REGION_LABEL[d.region] + "|" + subLabel(d) : subLabel(d)) + flags(d) + "</div>" +
       '<div class="detail-line">' + d.line + "</div></div>"));
     root.appendChild(head);
+    if(d.genre==='bean'&&FLAVOR_NOTES[d.id]){
+      var flavors=FLAVOR_NOTES[d.id];
+      root.appendChild(el('<section class="flavor-profile"><div class="field-label">こんな一杯をイメージ</div><dl><dt>香り</dt><dd>'+esc(flavors[0])+'</dd><dt>口当たり</dt><dd>'+esc(flavors[1])+'</dd><dt>余韻</dt><dd>'+esc(flavors[2])+'</dd></dl><p class="brew-note">'+esc(d.recipe)+'を想定した紹介です。特定の商品を試飲した評価ではなく、農園・品種・精製・焙煎によって表情が変わります。</p></section>'));
+    }
+    if (d.genre === 'bean' && d.country !== 'blend') {
+      var origin = el('<button class="reading-open" type="button">' + esc(COUNTRIES[d.country].ja) + 'を地図で見る</button>');
+      origin.addEventListener('click', function () { navigate('map', { focusCountry: d.country }); });
+      root.appendChild(origin);
+    }
 
     root.appendChild(d.genre === "bean" ? brewSection(d) : drinkRecipeSection(d));
     root.appendChild(traitsSection(d));
     root.appendChild(el('<div class="section"><div class="section-title">色と形のイメージ</div><div class="look">' + swatchHtml(d, "lg") + "<div>" + esc(d.look) + "</div></div></div>"));
     if (d.genre === "bean") root.appendChild(el('<div class="section"><div class="section-title">豆のデータ</div>' + d.recipe + "</div>"));
-    root.appendChild(el('<div class="section"><div class="section-title">豆知識</div>' + d.trivia + "</div>"));
+    var trivia = el('<div class="section"><div class="section-title">豆知識</div><p>' + esc(d.trivia || '') +
+      '</p><button class="reading-open" type="button">詳しく見る</button></div>');
+    trivia.querySelector('.reading-open').addEventListener('click', function () { openReading(d); });
+    root.appendChild(trivia);
 
     var rel = el('<div class="section"><div class="section-title">' + g.relatedLabel + '</div><div class="chip-row"></div></div>');
     relatedDrinks(d).forEach(function (x) {
       var c = el('<button class="chip">' + x.name + "</button>");
-      c.addEventListener("click", function () { navigate("detail", { detailId: x.id, pendingPref: null, pendingNote: "" }); });
+      c.addEventListener("click", function () { navigate("detail", { detailId: x.id, pendingPref: null, pendingRoast: null, pendingNote: "" }); });
       rel.querySelector(".chip-row").appendChild(c);
     });
     root.appendChild(rel);
@@ -1749,6 +2032,12 @@ window.COFFEE_LOG_CONFIG = {
       prefRow.appendChild(b);
     });
     rec.appendChild(prefRow);
+    var roastInput=null;
+    if(d.genre==='bean'){
+      rec.appendChild(el('<label class="field-label" for="actual-roast">実際に飲んだ豆の焙煎度</label>'));
+      roastInput=el('<select class="record-input" id="actual-roast"><option value="">わからない・未設定</option><option value="light">浅煎り</option><option value="medium">中煎り</option><option value="dark">深煎り</option></select>');
+      roastInput.value=state.pendingRoast||'';roastInput.onchange=function(){state.pendingRoast=roastInput.value;};rec.appendChild(roastInput);
+    }
     rec.appendChild(el('<label class="field-label" for="note">追加情報<span class="field-hint">任意</span></label>'));
     var ta = el('<textarea id="note" maxlength="300" placeholder="' +
       (d.genre === "bean" ? "例:グジ ○○農園/88℃にしたら甘さが出た" : "例:砂糖少なめで作った/氷を多めにした") + '"></textarea>');
@@ -1780,7 +2069,7 @@ window.COFFEE_LOG_CONFIG = {
         err.textContent = '飲んだ日を確認してください'; return;
       }
       var entry = { drinkId: d.id, timestamp: drank.toISOString(), preference: state.pendingPref,
-        note: (state.pendingNote || '').trim(), place: (state.pendingPlace || '').trim() };
+        note: (state.pendingNote || '').trim(), place: (state.pendingPlace || '').trim(), roast:roastInput&&roastInput.value||null };
       var earnedBefore = earnedBadgeIds(stock);
       var newOrigin = d.genre === 'bean' && d.country !== 'blend' && !passport(stock)[d.country];
       var storageMethod = authUser ? 'cloud' : 'local';
@@ -1792,7 +2081,7 @@ window.COFFEE_LOG_CONFIG = {
       var newlyEarned = !authUser && BADGES.find(function (b) {
         return !earnedBefore[b.id] && b.check(stock);
       });
-      state.pendingPref = null; state.pendingNote = ''; state.pendingPlace = ''; state.pendingDate = '';
+      state.pendingPref = null; state.pendingRoast=null; state.pendingNote = ''; state.pendingPlace = ''; state.pendingDate = '';
       if (d.genre === "bean") navigate("country", { country: d.country, justStamped: true, justEarnedBadge: newlyEarned || null });
       else navigate("stock", { justEarnedBadge: newlyEarned || null });
     });
@@ -1868,7 +2157,7 @@ window.COFFEE_LOG_CONFIG = {
         rows.appendChild(rowButton(swatchHtml(d, "sm") + '<div class="row-body"><div class="row-title">' + d.name + flags(d) +
           '</div><div class="row-sub">' + subLabel(d) + "</div>" +
           (d.genre === "bean" ? '<div class="brew-line">1人分|' + brewSummary(d) + "</div>" : "") + "</div>",
-          function () { navigate("detail", { detailId: d.id, pendingPref: null, pendingNote: "" }); }));
+          function () { navigate("detail", { detailId: d.id, pendingPref: null, pendingRoast: null, pendingNote: "" }); }));
       });
       listWrap.appendChild(rows);
     }
@@ -1881,11 +2170,11 @@ window.COFFEE_LOG_CONFIG = {
     logs.forEach(function (l) {
       var d = findDrink(l.drinkId);
       var inner = (d ? swatchHtml(d, "sm") : "") + '<div class="row-body"><div class="row-title">' + (d ? d.name : "不明") +
-        '</div>' + (l.place ? '<div class="row-sub">' + esc(l.place) + '</div>' : '') +
+        '</div>' + (d&&d.genre==='bean'?'<div class="row-sub">焙煎：'+(ROAST_LABEL[l.roast]||'未設定')+'</div>':'') + (l.place ? '<div class="row-sub">' + esc(l.place) + '</div>' : '') +
         (l.note ? '<div class="row-sub note">「' + esc(l.note) + '」</div>' : '') +
         '<div class="row-meta">' + fmtDate(l.timestamp) + "|" + (d ? (d.genre === "bean" ? COUNTRIES[d.country].ja : "ドリンク") : "") +
         "|" + (PREF_LABEL[l.preference] || "") + "</div></div>";
-      rows.appendChild(d ? rowButton(inner, function () { navigate("detail", { detailId: d.id, pendingPref: null, pendingNote: "" }); })
+      rows.appendChild(d ? rowButton(inner, function () { navigate("detail", { detailId: d.id, pendingPref: null, pendingRoast: null, pendingNote: "" }); })
         : el('<div class="row">' + inner + "</div>"));
     });
     return rows;
@@ -2045,7 +2334,7 @@ window.COFFEE_LOG_CONFIG = {
     };
     var section = state.screen;
     if (['genreSelect', 'question', 'results'].indexOf(section) !== -1) section = 'registry';
-    else if (section === 'country') section = 'passport';
+    else if (section === 'country' || section === 'map') section = 'passport';
     else if (section === 'detail') {
       var parent = history.slice().reverse().find(function (s) {
         return ['registry', 'passport', 'country', 'stock', 'start', 'results'].indexOf(s.screen) !== -1;
@@ -2071,7 +2360,7 @@ window.COFFEE_LOG_CONFIG = {
     return nav;
   }
 
-  var SCREENS = { start: renderStart, passport: renderPassport, country: renderCountry, genreSelect: renderGenreSelect,
+  var SCREENS = { start: renderStart, passport: renderPassport, map: renderMap, country: renderCountry, genreSelect: renderGenreSelect,
     question: renderQuestion, results: renderResults, detail: renderDetail, registry: renderRegistry, stock: renderStock, badges: renderBadges, account: renderAccount, newPassword: renderNewPassword };
   function render() {
     var app = document.getElementById("app");
