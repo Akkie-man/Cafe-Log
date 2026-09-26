@@ -174,6 +174,13 @@
   .detail-line { font-size: 13px; margin-top: 6px; }
   .section { border-top: 1px solid var(--line); padding-top: 12px; font-size: 13px; color: var(--ink-2); line-height: 1.75; }
   .section-title { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+  .brew-details summary { cursor: pointer; list-style: none; }
+  .brew-details summary::-webkit-details-marker { display: none; }
+  .brew-details summary::after { content: "▾"; float: right; color: var(--ink-3); font-size: 11px; }
+  .brew-details[open] summary { margin-bottom: 8px; }
+  .brew-details[open] summary::after { content: "▴"; }
+  .extra-heading { margin-top: 20px; padding-top: 14px; border-top: 1px dashed var(--line); color: var(--ink-3); }
+  .extra-tag { display: inline-block; margin-left: 6px; font-size: 9px; font-weight: 700; color: var(--ink-3); border: 1px solid var(--line); border-radius: 4px; padding: 1px 4px; vertical-align: middle; }
   .brew-meta { display: grid; grid-template-columns: auto 1fr; gap: 2px 14px; margin: 0 0 10px; }
   .brew-meta dt { color: var(--ink-3); }
   .brew-meta dd { margin: 0; color: var(--ink); }
@@ -1001,7 +1008,7 @@ window.COFFEE_LOG_CONFIG = {
   }
   function brewSummary(d) {
     var b = brewFor(d);
-    return "粉" + b.dose + "g・" + b.temp + "℃・お湯" + b.water + "ml・" + b.time;
+    return "おすすめ焙煎度 " + ROAST_LABEL[d.roast] + "・抽出温度目安 " + b.temp + "℃";
   }
 
   var DRINK_QUESTIONS = [
@@ -1440,7 +1447,7 @@ window.COFFEE_LOG_CONFIG = {
      ============================================================ */
   function emptyFilters(genre) { var f = {}; GENRES[genre].filters.forEach(function (g) { f[g.key] = []; }); return f; }
   function freshState() {
-    return { screen: "start", genre: "drink", registryGenre: "bean", answers: {}, qIndex: 0, results: [],
+    return { screen: "start", genre: "drink", registryGenre: "bean", stockGenre: "all", answers: {}, qIndex: 0, results: [],
       detailId: null, pendingPref: null, pendingRoast: null, pendingNote: "", pendingPlace: "", pendingDate: "", searchText: "", filters: emptyFilters("bean"), country: null, authMode: 'login', justStamped: false, justEarnedBadge: null };
   }
   var state = freshState();
@@ -1782,7 +1789,7 @@ window.COFFEE_LOG_CONFIG = {
       stampHtml(k, e ? { sub: fmtDate(e.first), pressed: state.justStamped } : { empty: true }) + "</div>"));
     root.appendChild(el('<div style="text-align:center;"><h1 class="page-title">' + c.ja + "</h1>" +
       '<div class="row-sub">' + REGION_LABEL[c.region] + (c.rare ? '<span class="flag rare">希少</span>' : "") +
-      (e ? "|" + e.count + "回記録" : "|まだ記録がありません") + "</div></div>"));
+      (e ? " ・ " + e.count + "回記録" : " ・ まだ記録がありません") + "</div></div>"));
     if (state.justEarnedBadge && !authUser) root.appendChild(badgeSavePrompt(state.justEarnedBadge, true));
 
     var logs = stock.filter(function (l) { var d = findDrink(l.drinkId); return d && d.country === k; }).slice().reverse();
@@ -1795,7 +1802,7 @@ window.COFFEE_LOG_CONFIG = {
     var rows = el('<div class="rows"></div>');
     beans.forEach(function (d) {
       rows.appendChild(rowButton(swatchHtml(d, "sm") + '<div class="row-body"><div class="row-title">' + d.name +
-        '</div><div class="row-sub">' + d.line + '</div><div class="brew-line">1人分|' + brewSummary(d) + "</div></div>",
+        '</div><div class="row-sub">' + d.line + '</div><div class="brew-line">' + brewSummary(d) + "</div></div>",
         function () { navigate("detail", { detailId: d.id, pendingPref: null, pendingRoast: null, pendingNote: "" }); }));
     });
     root.appendChild(rows);
@@ -1804,16 +1811,22 @@ window.COFFEE_LOG_CONFIG = {
   function renderGenreSelect(root) {
     root.appendChild(topbar(true));
     root.appendChild(el('<h1 class="page-title">今日はどっち?</h1>'));
-    var rows = el('<div class="rows"></div>');
-    ["bean", "drink"].forEach(function (key) {
-      rows.appendChild(rowButton('<div class="row-body"><div class="row-title">' + GENRES[key].label + '</div><div class="row-sub">' + GENRES[key].pickSub + "</div></div>",
+    function genreRow(key) {
+      var b = rowButton('<div class="row-body"><div class="row-title">' + GENRES[key].label + '</div><div class="row-sub">' + GENRES[key].pickSub + "</div></div>",
         function () {
           var run = { completed: false };
           navigate("question", { genre: key, answers: {}, qIndex: 0, diagnosisRun: run });
           trackEvent('diagnosis_start', { coffee_genre: key });
-        }));
-    });
+        });
+      return b;
+    }
+    var rows = el('<div class="rows"></div>');
+    rows.appendChild(genreRow("bean"));
     root.appendChild(rows);
+    root.appendChild(el('<div class="section-title extra-heading">番外編</div>'));
+    var extraRows = el('<div class="rows"></div>');
+    extraRows.appendChild(genreRow("drink"));
+    root.appendChild(extraRows);
   }
 
   function renderQuestion(root) {
@@ -1885,9 +1898,9 @@ window.COFFEE_LOG_CONFIG = {
         (d.genre !== 'bean' || !passport(stock)[d.country]);
       var b = el('<button class="result' + (i === 0 ? " best" : "") + '">' + swatchHtml(d, "sm") +
         '<div class="row-body"><div class="row-title">' + d.name + flags(d) + '</div><div class="row-sub">' +
-        (d.genre === "bean" && d.name.indexOf(COUNTRIES[d.country].ja) === -1 ? COUNTRIES[d.country].ja + "|" : "") + d.line + "</div>" +
+        (d.genre === "bean" && d.name.indexOf(COUNTRIES[d.country].ja) === -1 ? COUNTRIES[d.country].ja + " ・ " : "") + d.line + "</div>" +
         '<div class="result-reason">' + esc(recommendationReason(d, state.genre, adventure)) + '</div>' +
-        (d.genre === "bean" ? '<div class="brew-line">1人分|' + brewSummary(d) + "</div>" : "") +
+        (d.genre === "bean" ? '<div class="brew-line">' + brewSummary(d) + "</div>" : "") +
         '</div><span class="row-arrow">&rsaquo;</span></button>');
       b.addEventListener("click", function () { navigate("detail", { detailId: d.id, pendingPref: null, pendingRoast: null, pendingNote: "" }); });
       list.appendChild(b);
@@ -1909,14 +1922,14 @@ window.COFFEE_LOG_CONFIG = {
   }
   function brewSection(d) {
     var b = brewFor(d);
-    return el('<div class="section"><div class="section-title">ハンドドリップの抽出目安（1人分）</div><p class="brew-note">COFFEE LOGの参考レシピです。豆の焙煎度・挽き方・器具に合わせて調整してください。</p>' +
+    return el('<details class="section brew-details"><summary class="section-title">' + brewSummary(d) + '</summary><p class="brew-note">COFFEE LOGの参考レシピです。豆の焙煎度・挽き方・器具に合わせて調整してください。</p>' +
       '<dl class="brew-meta"><dt>出来上がり</dt><dd>約150ml(カップ1杯)</dd>' +
       "<dt>粉</dt><dd>" + b.dose + "g(" + b.grind + ")</dd><dt>お湯</dt><dd>" + b.water + "ml、" + b.temp + "℃前後</dd></dl>" +
       '<ol class="steps"><li>お湯を30ml注いで、' + b.bloom + "秒蒸らす</li>" +
       "<li>中心から「の」の字を描くように、残りの" + (b.water - 30) + "mlを3回に分けて注ぐ</li>" +
       "<li>" + b.time + "前後、約150mlになったらドリッパーを外す(最後まで落としきらない)</li></ol>" +
       '<div class="brew-note">向いている器具:' + b.device + "</div>" +
-      (b.tip ? '<div class="brew-note">コツ:' + b.tip + "</div>" : "") + "</div>");
+      (b.tip ? '<div class="brew-note">コツ:' + b.tip + "</div>" : "") + "</details>");
   }
   function drinkRecipeSection(d) {
     var body = Array.isArray(d.recipe)
@@ -1986,8 +1999,8 @@ window.COFFEE_LOG_CONFIG = {
       st.addEventListener("click", function () { navigate("country", { country: d.country }); });
       head.appendChild(st);
     }
-    head.appendChild(el('<div><h1 class="detail-name">' + d.name + "</h1>" +
-      '<div class="detail-sub">' + (d.genre === "bean" ? REGION_LABEL[d.region] + "|" + subLabel(d) : subLabel(d)) + flags(d) + "</div>" +
+    head.appendChild(el('<div><h1 class="detail-name">' + d.name + (d.genre === "drink" ? '<span class="extra-tag">番外編</span>' : "") + "</h1>" +
+      '<div class="detail-sub">' + (d.genre === "bean" ? REGION_LABEL[d.region] + " ・ " + subLabel(d) : subLabel(d)) + flags(d) + "</div>" +
       '<div class="detail-line">' + d.line + "</div></div>"));
     root.appendChild(head);
     if(d.genre==='bean'&&FLAVOR_NOTES[d.id]){
@@ -2040,7 +2053,7 @@ window.COFFEE_LOG_CONFIG = {
     }
     rec.appendChild(el('<label class="field-label" for="note">追加情報<span class="field-hint">任意</span></label>'));
     var ta = el('<textarea id="note" maxlength="300" placeholder="' +
-      (d.genre === "bean" ? "例:グジ ○○農園/88℃にしたら甘さが出た" : "例:砂糖少なめで作った/氷を多めにした") + '"></textarea>');
+      (d.genre === "bean" ? "例:ハンドドリップ/88℃にしたら甘さが出た" : "例:砂糖少なめで作った/氷を多めにした") + '"></textarea>');
     ta.value = state.pendingNote || "";
     ta.addEventListener("input", function () { state.pendingNote = ta.value; });
     rec.appendChild(ta);
@@ -2107,7 +2120,8 @@ window.COFFEE_LOG_CONFIG = {
     root.appendChild(el('<h1 class="page-title">登録一覧</h1>'));
     var tabs = el('<div class="tab-row"></div>');
     ["bean", "drink"].forEach(function (key) {
-      var t = el('<button class="tab-btn' + (state.registryGenre === key ? " active" : "") + '">' + GENRES[key].label + "</button>");
+      var t = el('<button class="tab-btn' + (state.registryGenre === key ? " active" : "") + '">' + GENRES[key].label +
+        (key === "drink" ? '<span class="extra-tag">番外編</span>' : "") + "</button>");
       t.addEventListener("click", function () {
         if (state.registryGenre === key) return;
         state.registryGenre = key; state.filters = emptyFilters(key); render();
@@ -2156,7 +2170,7 @@ window.COFFEE_LOG_CONFIG = {
       items.forEach(function (d) {
         rows.appendChild(rowButton(swatchHtml(d, "sm") + '<div class="row-body"><div class="row-title">' + d.name + flags(d) +
           '</div><div class="row-sub">' + subLabel(d) + "</div>" +
-          (d.genre === "bean" ? '<div class="brew-line">1人分 ・ ' + brewSummary(d) + "</div>" : "") + "</div>",
+          (d.genre === "bean" ? '<div class="brew-line">' + brewSummary(d) + "</div>" : "") + "</div>",
           function () { navigate("detail", { detailId: d.id, pendingPref: null, pendingRoast: null, pendingNote: "" }); }));
       });
       listWrap.appendChild(rows);
@@ -2188,7 +2202,27 @@ window.COFFEE_LOG_CONFIG = {
       root.appendChild(el('<div class="empty">まだ記録がありません。<br>「質問で選ぶ」か「登録一覧」から一杯選んでみてください</div>'));
       return;
     }
-    root.appendChild(logRows(stock.slice().reverse()));
+    var tabs = el('<div class="tab-row"></div>');
+    [{ key: "all", label: "すべて" }, { key: "bean", label: "豆" }, { key: "drink", label: "ドリンク", extra: true }].forEach(function (t) {
+      var b = el('<button class="tab-btn' + (state.stockGenre === t.key ? " active" : "") + '">' + t.label +
+        (t.extra ? '<span class="extra-tag">番外編</span>' : "") + "</button>");
+      b.addEventListener("click", function () {
+        if (state.stockGenre === t.key) return;
+        state.stockGenre = t.key; render();
+      });
+      tabs.appendChild(b);
+    });
+    root.appendChild(tabs);
+    var filtered = stock.filter(function (l) {
+      if (state.stockGenre === "all") return true;
+      var d = findDrink(l.drinkId);
+      return d && d.genre === state.stockGenre;
+    });
+    if (!filtered.length) {
+      root.appendChild(el('<div class="empty">' + (state.stockGenre === "drink" ? "まだドリンクの記録がありません。" : "まだ記録がありません。") + '</div>'));
+      return;
+    }
+    root.appendChild(logRows(filtered.slice().reverse()));
   }
 
   function renderAccount(root) {
