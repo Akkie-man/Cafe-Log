@@ -113,6 +113,12 @@
   .row-arrow { margin-left: auto; color: var(--ink-3); font-size: 18px; flex-shrink: 0; }
   .row-body { min-width: 0; }
   .note { color: var(--ink-2); }
+  .log-row { display: flex; align-items: stretch; gap: 2px; border-bottom: 1px dashed var(--line); }
+  .log-row .row-body-btn { flex: 1; display: flex; align-items: center; gap: 12px; width: 100%;
+    text-align: left; padding: 14px 2px; border: none; background: none; min-width: 0; }
+  .log-row .row-body-btn:hover:not(:disabled) { background: var(--paper-2); }
+  .log-row .row-delete { flex: none; width: 40px; border: none; background: none; color: var(--ink-3); font-size: 15px; }
+  .log-row .row-delete:hover { color: var(--vermilion); }
 
   .stat-line { display: flex; gap: 24px; font-size: 12px; color: var(--ink-2); }
   .stat-line b { font-family: var(--font-stamp); font-weight: 500; font-size: 20px; color: var(--ink); margin-right: 4px; }
@@ -222,6 +228,9 @@
   .account-card p { color: var(--ink-2); font-size: 12px; margin: 6px 0 12px; }
   .account-card .record-input { margin: 10px 0; }
   .account-card .primary-btn { margin-top: 12px; }
+  .danger-zone { margin-top: 16px; border-color: var(--vermilion); }
+  .danger-zone .danger-link { color: var(--vermilion); }
+  .modal-confirm.danger { background: var(--vermilion); color: var(--paper); border-color: var(--vermilion); }
   .auth-links { display: grid; gap: 2px; }
   .auth-links .ghost-btn { min-height: 44px; }
   .account-link { color: var(--indigo); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
@@ -1174,7 +1183,7 @@ window.COFFEE_LOG_CONFIG = {
     } catch (e) { return []; }
   }
   function saveStock(s) { try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); return true; } catch (e) { return false; } }
-  var stock = loadStock();
+  var stock; try { stock = prepareLocalRows(); } catch (e) { stock = loadStock(); }
   var api = null, authUser = null, cloudReady = false, cloudBusy = false, syncError = '', isPasswordRecovery = false, pendingSignupEmail = '';
   var configured = /^https:\/\/[^/]+\.supabase\.co$/.test(window.COFFEE_LOG_CONFIG.supabaseUrl) &&
     /^(sb_publishable_|eyJ)/.test(window.COFFEE_LOG_CONFIG.publishableKey);
@@ -1259,16 +1268,28 @@ window.COFFEE_LOG_CONFIG = {
     else if (result.data.session && !cloudBusy && !cloudReady) await syncAccount(result.data.session.user);
   }
   async function addLog(log) {
+    if (!log.id) log.id = logId();
     if (!authUser) {
       var next = stock.concat([log]);
       if (!saveStock(next)) throw new Error('端末内に保存できませんでした');
       stock = next; return;
     }
     if (!cloudReady) throw new Error('同期が完了していません。再試行してください');
-    log.id = logId();
     var result = await api.from('coffee_logs').insert(toRow(log, authUser.id));
     if (result.error) throw result.error;
     stock = stock.concat([log]);
+  }
+  async function deleteLog(l) {
+    if (!authUser) {
+      var next = stock.filter(function (x) { return x.id !== l.id; });
+      if (!saveStock(next)) return { error: '端末内から削除できませんでした。再試行してください' };
+      stock = next; return null;
+    }
+    if (!cloudReady) return { error: '同期が完了していません。再試行してください' };
+    var result = await api.from('coffee_logs').delete().eq('id', l.id).eq('user_id', authUser.id);
+    if (result.error) return { error: result.error.message };
+    stock = stock.filter(function (x) { return x.id !== l.id; });
+    return null;
   }
 
   // 国ごとの集計 { country: { count, first } }
@@ -1465,6 +1486,52 @@ window.COFFEE_LOG_CONFIG = {
 
   function hasUnsavedInput() {
     return state.screen === "question" || (state.screen === "detail" && (state.pendingPref || state.pendingRoast || state.pendingNote || state.pendingPlace || state.pendingDate));
+  }
+  function confirmDeleteLog(l) {
+    var d = findDrink(l.drinkId);
+    var name = d ? d.name : '不明な記録';
+    var willRemoveStamp = d && d.genre === 'bean' && d.country !== 'blend' &&
+      !stock.some(function (x) { var xd = findDrink(x.drinkId); return x.id !== l.id && xd && xd.genre === 'bean' && xd.country === d.country; });
+    var msg = esc(name) + '（' + fmtDate(l.timestamp) + '）の記録を削除しますか？' +
+      (willRemoveStamp ? '<br>この国の記録はこれが最後なので、パスポートのスタンプも消えます。' : '');
+    var overlay = el('<div class="modal-overlay"><div class="modal-card"><div class="modal-text">' + msg +
+      '</div><div class="err" role="status"></div><div class="modal-actions"><button class="modal-cancel">キャンセル</button><button class="modal-confirm">削除する</button></div></div></div>');
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', function (e) { if (e.target === overlay) overlay.remove(); });
+    overlay.querySelector('.modal-cancel').addEventListener('click', function () { overlay.remove(); });
+    var confirmBtn = overlay.querySelector('.modal-confirm'), errEl = overlay.querySelector('.err');
+    confirmBtn.addEventListener('click', async function () {
+      confirmBtn.disabled = true; confirmBtn.textContent = '削除中…';
+      var result = await deleteLog(l);
+      if (result && result.error) {
+        errEl.textContent = result.error; confirmBtn.disabled = false; confirmBtn.textContent = '削除する'; return;
+      }
+      overlay.remove(); render();
+    });
+  }
+  function confirmDeleteAccount() {
+    var overlay = el('<div class="modal-overlay"><div class="modal-card"><div class="modal-text">' +
+      'アカウントと、クラウドに保存した記録（' + stock.length + '件）・パスポート・バッジを完全に削除します。<br>この操作は取り消せません。別端末でログインしている場合もログアウトされます。' +
+      '</div><div class="err" role="status"></div><div class="modal-actions"><button class="modal-cancel">キャンセル</button><button class="modal-confirm danger">完全に削除する</button></div></div></div>');
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', function (e) { if (e.target === overlay) overlay.remove(); });
+    overlay.querySelector('.modal-cancel').addEventListener('click', function () { overlay.remove(); });
+    var confirmBtn = overlay.querySelector('.modal-confirm'), errEl = overlay.querySelector('.err');
+    confirmBtn.addEventListener('click', async function () {
+      confirmBtn.disabled = true; confirmBtn.textContent = '削除中…';
+      try {
+        var result = await api.functions.invoke('delete-account', { method: 'POST' });
+        if (result.error) throw result.error;
+        if (result.data && result.data.error) throw new Error(result.data.error);
+        try { await api.auth.signOut(); } catch (e) {}
+        try { window.localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+        authUser = null; cloudReady = false; syncError = ''; stock = [];
+        overlay.remove(); history = []; state = freshState(); render();
+      } catch (e) {
+        errEl.textContent = '削除できませんでした: ' + (e.message || '再試行してください');
+        confirmBtn.disabled = false; confirmBtn.textContent = '完全に削除する';
+      }
+    });
   }
   function confirmGoHome() {
     if (state.screen === "start") return;
@@ -2191,8 +2258,17 @@ window.COFFEE_LOG_CONFIG = {
         (l.note ? '<div class="row-sub note">「' + esc(l.note) + '」</div>' : '') +
         '<div class="row-meta">' + fmtDate(l.timestamp) + " ・ " + (d ? (d.genre === "bean" ? COUNTRIES[d.country].ja : "ドリンク") : "") +
         " ・ " + (PREF_LABEL[l.preference] || "") + "</div></div>";
-      rows.appendChild(d ? rowButton(inner, function () { navigate("detail", { detailId: d.id, pendingPref: null, pendingRoast: null, pendingNote: "" }); })
-        : el('<div class="row">' + inner + "</div>"));
+      var wrap = el('<div class="log-row"></div>');
+      var body = el('<button class="row-body-btn" type="button">' + inner + '<span class="row-arrow">&rsaquo;</span></button>');
+      if (d) body.addEventListener("click", function () { navigate("detail", { detailId: d.id, pendingPref: null, pendingRoast: null, pendingNote: "" }); });
+      else body.disabled = true;
+      wrap.appendChild(body);
+      if (l.id) {
+        var del = el('<button class="row-delete" type="button" aria-label="この記録を削除">🗑</button>');
+        del.addEventListener("click", function (e) { e.stopPropagation(); confirmDeleteLog(l); });
+        wrap.appendChild(del);
+      }
+      rows.appendChild(wrap);
     });
     return rows;
   }
@@ -2252,6 +2328,11 @@ window.COFFEE_LOG_CONFIG = {
         var result = await api.auth.signOut();
         if (result.error) { syncError = result.error.message; render(); }
       });
+      var dangerZone = el('<div class="account-card danger-zone"><h2>退会・データ削除</h2>' +
+        '<p>アカウントと、クラウドに保存した記録・パスポート・バッジをすべて削除します。この操作は取り消せません。</p>' +
+        '<button class="ghost-btn danger-link">退会してデータを削除する</button></div>');
+      dangerZone.querySelector('.danger-link').addEventListener('click', function () { confirmDeleteAccount(); });
+      root.appendChild(dangerZone);
       return;
     }
     var mode = state.authMode;
@@ -2259,7 +2340,7 @@ window.COFFEE_LOG_CONFIG = {
       (mode === 'signup' ? '新規登録' : mode === 'reset' ? 'パスワード再設定' : 'ログイン') + '</h2>' +
       '<p>' + (mode === 'signup' ? '登録後、このブラウザの記録をアカウントに移します。' :
         mode === 'reset' ? '登録したメールアドレスに再設定用のリンクを送ります。' :
-        'BAR LOGと同じメールアドレス・パスワードでログインできます。端末内の記録も引き継ぎます。') + '</p>' +
+        '登録したメールアドレス・パスワードでログインできます。端末内の記録も引き継ぎます。') + '</p>' +
       '<label class="field-label" for="login-email">メールアドレス</label>' +
       '<input class="record-input" id="login-email" type="email" inputmode="email" autocapitalize="off" autocomplete="email" required placeholder="you@example.com">' +
       (mode === 'reset' ? '' : '<label class="field-label" for="login-password">パスワード</label>' +
