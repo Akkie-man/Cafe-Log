@@ -230,6 +230,9 @@
   .account-card .primary-btn { margin-top: 12px; }
   .danger-zone { margin-top: 16px; border-color: var(--vermilion); }
   .danger-zone .danger-link { color: var(--vermilion); }
+  .contact-footer { margin-top: 28px; padding-top: 14px; border-top: 1px dashed var(--line); text-align: center; }
+  .contact-footer p { font-size: 11px; color: var(--ink-3); margin-bottom: 8px; line-height: 1.6; }
+  .contact-footer .ghost-btn { display: inline-block; width: auto; padding: 6px 14px; font-size: 11px; }
   .modal-confirm.danger { background: var(--vermilion); color: var(--paper); border-color: var(--vermilion); }
   .auth-links { display: grid; gap: 2px; }
   .auth-links .ghost-btn { min-height: 44px; }
@@ -2304,6 +2307,29 @@ window.COFFEE_LOG_CONFIG = {
     root.appendChild(logRows(filtered.slice().reverse()));
   }
 
+  function contactFooter() {
+    return el('<div class="contact-footer"><p>不具合のご報告やお困りごとは、運営「こってり開発部」までご連絡ください。パスワード・認証コード・リカバリーコードは送らないでください。</p>' +
+      '<a class="ghost-btn" href="https://www.instagram.com/kotteri_kaihatsubu/" target="_blank" rel="noopener noreferrer">Instagramで問い合わせる</a></div>');
+  }
+  function authErrorMessage(mode, error) {
+    var msg = (error && error.message) || '';
+    if (mode !== 'reset' && /invalid login credentials/i.test(msg)) {
+      return 'メールアドレスまたはパスワードが正しくありません。登録がまだの場合は下の「はじめての方はこちら（新規登録）」から、パスワードを忘れた場合は「パスワードをお忘れですか？」からお試しください。';
+    }
+    if (/email not confirmed/i.test(msg)) {
+      return 'メールアドレスの確認がまだ完了していません。届いた確認メール内のリンクを開いてください。見当たらない場合は迷惑メールフォルダもご確認ください。';
+    }
+    if (mode === 'signup' && /already registered|already exists|user already/i.test(msg)) {
+      return 'このメールアドレスは既に登録されています。ログイン画面からログインするか、パスワードをお忘れの場合は再設定をお試しください。';
+    }
+    if (/rate limit|too many requests/i.test(msg)) {
+      return '試行回数が多くなっています。少し時間をおいてから再試行してください。';
+    }
+    if (/network|fetch|failed to fetch/i.test(msg)) {
+      return '通信エラーが発生しました。インターネット接続をご確認のうえ、再試行してください。';
+    }
+    return '処理できませんでした（' + (msg || '不明なエラー') + '）。時間をおいて再試行しても解決しない場合は、下部の問い合わせ先までご連絡ください。';
+  }
   function renderAccount(root) {
     root.appendChild(topbar(true));
     root.appendChild(el('<h1 class="page-title">アカウントと保存</h1>'));
@@ -2313,6 +2339,7 @@ window.COFFEE_LOG_CONFIG = {
     if (!configured) {
       root.appendChild(el('<div class="account-card"><h2>ログイン機能は準備中です</h2>' +
         '<p>現在はクラウドへのバックアップができません。ブラウザのデータを消すと記録は失われます。</p></div>'));
+      root.appendChild(contactFooter());
       return;
     }
     if (!api) { root.appendChild(el('<div class="empty">接続を確認しています</div>')); return; }
@@ -2333,6 +2360,7 @@ window.COFFEE_LOG_CONFIG = {
         '<button class="ghost-btn danger-link">退会してデータを削除する</button></div>');
       dangerZone.querySelector('.danger-link').addEventListener('click', function () { confirmDeleteAccount(); });
       root.appendChild(dangerZone);
+      root.appendChild(contactFooter());
       return;
     }
     var mode = state.authMode;
@@ -2391,7 +2419,7 @@ window.COFFEE_LOG_CONFIG = {
         } else if (mode === 'reset') message.textContent = '再設定メールを送信しました。届いたリンクを開いてください。';
         else { state.screen = 'start'; render(); }
       } catch (e) {
-        message.textContent = '処理できませんでした: ' + (e.message || '通信を確認して再試行してください');
+        message.textContent = authErrorMessage(mode, e);
       } finally { button.disabled = false; }
     });
     var links = el('<div class="auth-links"></div>');
@@ -2403,6 +2431,7 @@ window.COFFEE_LOG_CONFIG = {
       (mode === 'signup' || mode === 'reset' ? 'ログイン画面に戻る' : 'はじめての方はこちら（新規登録）') + '</button>');
     toggle.addEventListener('click', function () { state.authMode = mode === 'login' ? 'signup' : 'login'; render(); });
     links.appendChild(toggle); root.appendChild(links);
+    root.appendChild(contactFooter());
   }
 
   function renderNewPassword(root) {
