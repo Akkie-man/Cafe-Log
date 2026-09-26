@@ -2156,7 +2156,7 @@ window.COFFEE_LOG_CONFIG = {
       items.forEach(function (d) {
         rows.appendChild(rowButton(swatchHtml(d, "sm") + '<div class="row-body"><div class="row-title">' + d.name + flags(d) +
           '</div><div class="row-sub">' + subLabel(d) + "</div>" +
-          (d.genre === "bean" ? '<div class="brew-line">1人分|' + brewSummary(d) + "</div>" : "") + "</div>",
+          (d.genre === "bean" ? '<div class="brew-line">1人分 ・ ' + brewSummary(d) + "</div>" : "") + "</div>",
           function () { navigate("detail", { detailId: d.id, pendingPref: null, pendingRoast: null, pendingNote: "" }); }));
       });
       listWrap.appendChild(rows);
@@ -2172,8 +2172,8 @@ window.COFFEE_LOG_CONFIG = {
       var inner = (d ? swatchHtml(d, "sm") : "") + '<div class="row-body"><div class="row-title">' + (d ? d.name : "不明") +
         '</div>' + (d&&d.genre==='bean'?'<div class="row-sub">焙煎：'+(ROAST_LABEL[l.roast]||'未設定')+'</div>':'') + (l.place ? '<div class="row-sub">' + esc(l.place) + '</div>' : '') +
         (l.note ? '<div class="row-sub note">「' + esc(l.note) + '」</div>' : '') +
-        '<div class="row-meta">' + fmtDate(l.timestamp) + "|" + (d ? (d.genre === "bean" ? COUNTRIES[d.country].ja : "ドリンク") : "") +
-        "|" + (PREF_LABEL[l.preference] || "") + "</div></div>";
+        '<div class="row-meta">' + fmtDate(l.timestamp) + " ・ " + (d ? (d.genre === "bean" ? COUNTRIES[d.country].ja : "ドリンク") : "") +
+        " ・ " + (PREF_LABEL[l.preference] || "") + "</div></div>";
       rows.appendChild(d ? rowButton(inner, function () { navigate("detail", { detailId: d.id, pendingPref: null, pendingRoast: null, pendingNote: "" }); })
         : el('<div class="row">' + inner + "</div>"));
     });
