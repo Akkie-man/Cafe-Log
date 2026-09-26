@@ -233,6 +233,13 @@
   .contact-footer { margin-top: 28px; padding-top: 14px; border-top: 1px dashed var(--line); text-align: center; }
   .contact-footer p { font-size: 11px; color: var(--ink-3); margin-bottom: 8px; line-height: 1.6; }
   .contact-footer .ghost-btn { display: inline-block; width: auto; padding: 6px 14px; font-size: 11px; }
+  .monetize-card { margin-top: 18px; padding: 12px 14px; border: 1px solid var(--line);
+    border-radius: 10px; background: var(--paper-2); }
+  .monetize-label { font-size: 12px; font-weight: 700; margin-bottom: 8px; }
+  .monetize-links { display: flex; flex-direction: column; gap: 8px; }
+  .monetize-link { display: inline-block; font-size: 12px; font-weight: 700; color: var(--indigo);
+    text-decoration: underline; text-underline-offset: 3px; }
+  .monetize-disclosure { font-size: 11px; color: var(--ink-3); margin: 8px 0 0; }
   .modal-confirm.danger { background: var(--vermilion); color: var(--paper); border-color: var(--vermilion); }
   .auth-links { display: grid; gap: 2px; }
   .auth-links .ghost-btn { min-height: 44px; }
@@ -1504,6 +1511,40 @@ window.COFFEE_LOG_CONFIG = {
   }
 
   /* ============================================================
+     MONETIZATION — 豆詳細ページの紹介リンク枠。
+     方針（変更しないこと）:
+     - 店舗から料金を受け取る有料掲載、順位操作、評価操作は実装しない。
+       ここに何を置くかは編集部の判断であり、支払いの有無で変わらない。
+     - このデータは評価（preference）・検索/並び順（relatedDrinks, 診断結果, フィルタ）・
+       産地情報（BEAN_READING, FLAVOR_INFO, COUNTRIES等）のどれからも参照されない。
+     - リンクはただの外部URL。ユーザーの記録・メールアドレス・認証情報など、
+       このアプリが持つ情報は一切URLやパラメータに含めず、広告主・紹介先へ渡さない。
+     - リンク未設定の豆では枠自体を表示しない。設定した場合は、リンクの近くに
+       「紹介リンクを含みます」と表示する。
+     データ形式（値がない豆では何も表示しない）:
+       monetization: { label: "この豆を試す",
+         links: [ { label: "豆の販売ページを見る", url: "https://example.com/", type: "affiliate" } ] }
+     本番URLや実在商品のリンクは、運営者が内容と規約を確認してから設定する。ダミーURLは公開版に残さない。
+     ============================================================ */
+  var MONETIZATION = {};
+  function monetizationSection(d) {
+    var m = MONETIZATION[d.id];
+    var links = m && m.links ? m.links.filter(function (l) { return l && l.url; }) : [];
+    if (!links.length) return null;
+    var box = el('<aside class="monetize-card" aria-label="紹介リンク">' +
+      (m.label ? '<div class="monetize-label">' + esc(m.label) + '</div>' : '') +
+      '<div class="monetize-links"></div>' +
+      '<p class="monetize-disclosure">紹介リンクを含みます</p></aside>');
+    var wrap = box.querySelector('.monetize-links');
+    links.forEach(function (l) {
+      var a = el('<a class="monetize-link" href="' + l.url + '" target="_blank" rel="sponsored nofollow noopener noreferrer">' + esc(l.label || '詳しく見る') + '</a>');
+      a.addEventListener('click', function () { trackEvent('affiliate_click', { bean_id: d.id, link_type: l.type || 'affiliate' }); });
+      wrap.appendChild(a);
+    });
+    return box;
+  }
+
+  /* ============================================================
      STATE / ROUTER
      ============================================================ */
   function emptyFilters(genre) { var f = {}; GENRES[genre].filters.forEach(function (g) { f[g.key] = []; }); return f; }
@@ -2185,6 +2226,11 @@ window.COFFEE_LOG_CONFIG = {
     });
     root.appendChild(rel);
 
+    if (d.genre === 'bean') {
+      var monetize = monetizationSection(d);
+      if (monetize) root.appendChild(monetize);
+    }
+
     // 記録フォーム
     var rec = el('<div class="record"></div>');
     rec.appendChild(el('<div class="field-label">記録する</div>'));
@@ -2406,7 +2452,8 @@ window.COFFEE_LOG_CONFIG = {
       '<div><b>利用しているサービス</b><p>データの保存・認証にSupabase、メール配信にResend、アプリの公開にVercel、利用状況の分析にGoogle Analyticsを利用しています。お問い合わせ窓口としてInstagram（Metaのサービス）を利用しています。</p></div>' +
       '<div><b>記録・アカウントの削除</b><p>飲んだ記録は、記録一覧の削除ボタンからいつでも削除できます。アカウントとクラウドに保存した記録は「アカウントと保存」画面の「退会・データ削除」から削除でき、削除すると元に戻せません。ログインできないなど、アプリ内で削除できない場合は、下記の問い合わせ先までご連絡ください。</p></div>' +
       '<div><b>開示・訂正・利用停止のご相談</b><p>ご自身の情報の開示・訂正・利用停止などをご希望の場合は、問い合わせ先までご連絡ください。ご本人であることを確認のうえ対応します。</p></div>' +
-      '<div><b>Google Analyticsについて</b><p>アプリの利用状況を把握するため、Google Analyticsを利用しています。Cookie等を通じて、匿名化された利用データがGoogleに送信されます。</p></div></div>'));
+      '<div><b>Google Analyticsについて</b><p>アプリの利用状況を把握するため、Google Analyticsを利用しています。Cookie等を通じて、匿名化された利用データがGoogleに送信されます。</p></div>' +
+      '<div><b>紹介リンク・広告について</b><p>当サイトには、商品やサービスを紹介するリンクが含まれる場合があります。リンク経由で購入されると、運営者に紹介料が入ることがあります。紹介リンクを利用しても、COFFEE LOGに保存した記録やメールアドレスが紹介先へ送信されることはありません。紹介料の有無によって、豆の評価・検索や並び順・産地情報の内容を変えることはありません。将来、広告を導入する場合は、Cookie等の利用について本ページで改めて説明します。</p></div></div>'));
     var ga = el('<a class="ghost-btn" href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Googleのプライバシーポリシーを見る</a>');
     root.appendChild(ga);
     root.appendChild(contactFooter(true));
