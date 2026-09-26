@@ -225,7 +225,9 @@
   .auth-links { display: grid; gap: 2px; }
   .auth-links .ghost-btn { min-height: 44px; }
   .account-link { color: var(--indigo); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
-  .account-badge { color: var(--ink-2); font-size: 11px; margin-left: auto; }
+  .account-badge { display: inline-flex; align-items: center; gap: 4px; color: var(--ink-2); font-size: 11px;
+    margin-left: auto; padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--paper-2); }
+  .account-badge::after { content: "›"; font-size: 13px; color: var(--ink-3); }
   .sync-alert { padding: 10px 12px; border-radius: 8px; border: 1px solid var(--vermilion); color: var(--vermilion); font-size: 12px; }
   .save-status { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:11px 13px;
     border:1px solid var(--line); border-radius:10px; background:var(--paper-2); font-size:12px; line-height:1.5; }
@@ -1563,9 +1565,10 @@ window.COFFEE_LOG_CONFIG = {
      SCREENS
      ============================================================ */
   function saveStatus() {
-    var title = authUser ? (cloudReady ? '☁ クラウドに保存中' : '⚠ 同期が必要です') :
+    if (authUser && cloudReady) return null;
+    var title = authUser ? '⚠ 同期が必要です' :
       (configured ? 'ログインして、記録とパスポートを引き継ごう' : 'ログインによる保存は準備中です');
-    var detail = authUser ? (cloudReady ? 'ログイン中。別端末でも記録を引き継げます。' : '同期が終わるまで新しい記録は保存できません。') :
+    var detail = authUser ? '同期が終わるまで新しい記録は保存できません。' :
       (configured ? 'ログインすると、この端末の記録をクラウドに移せます。ログイン前はブラウザのデータを消すと失われます。' :
         '今の記録はこのブラウザにだけ残ります。データを消すと失われ、別端末には引き継げません。');
     var box = el('<div class="save-status"><div><strong>' + title + '</strong><span>' + detail +
@@ -1603,7 +1606,7 @@ window.COFFEE_LOG_CONFIG = {
     );
     cover.addEventListener("click", function () { navigate("passport"); });
     root.appendChild(cover);
-    root.appendChild(saveStatus());
+    var status1 = saveStatus(); if (status1) root.appendChild(status1);
     if (syncError) root.appendChild(el('<div class="sync-alert">' + esc(syncError) + '</div>'));
 
     var next = nextBean(), today = next ? next.bean : dailyBean();
@@ -1635,7 +1638,7 @@ window.COFFEE_LOG_CONFIG = {
     root.appendChild(topbar(true));
     var p = passport(stock);
     root.appendChild(el('<h1 class="page-title">産地パスポート</h1>'));
-    root.appendChild(saveStatus());
+    var status2 = saveStatus(); if (status2) root.appendChild(status2);
     root.appendChild(el('<div class="page-lead">' + countryCount(p) + ' / ' + COUNTRY_KEYS.length +
       ' か国。あと ' + (COUNTRY_KEYS.length - countryCount(p)) + ' か国で制覇。未達成の国を押すと、試せる豆が見られます。</div>'));
     root.appendChild(passportSwitch(false));
@@ -2196,7 +2199,7 @@ window.COFFEE_LOG_CONFIG = {
   function renderStock(root) {
     root.appendChild(topbar(true));
     root.appendChild(el('<h1 class="page-title">記録</h1>'));
-    root.appendChild(saveStatus());
+    var status3 = saveStatus(); if (status3) root.appendChild(status3);
     if (state.justEarnedBadge && !authUser) root.appendChild(badgeSavePrompt(state.justEarnedBadge, true));
     if (!stock.length) {
       root.appendChild(el('<div class="empty">まだ記録がありません。<br>「質問で選ぶ」か「登録一覧」から一杯選んでみてください</div>'));
