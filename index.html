@@ -1526,10 +1526,23 @@ window.COFFEE_LOG_CONFIG = {
          links: [ { label: "豆の販売ページを見る", url: "https://example.com/", type: "affiliate" } ] }
      本番URLや実在商品のリンクは、運営者が内容と規約を確認してから設定する。ダミーURLは公開版に残さない。
      ============================================================ */
-  var MONETIZATION = {};
+  var MONETIZATION = {
+    ethiopia_yirgacheffe: { label: "この豆を試す（確認用テストリンク）", links: [
+      { label: "テストリンクを開く", url: "https://example.com/", type: "affiliate" }
+    ] }
+  };
+  function safeHttpsUrl(url) {
+    if (typeof url !== 'string' || !url) return null;
+    try {
+      var u = new URL(url);
+      return u.protocol === 'https:' ? u.href : null;
+    } catch (e) { return null; }
+  }
   function monetizationSection(d) {
     var m = MONETIZATION[d.id];
-    var links = m && m.links ? m.links.filter(function (l) { return l && l.url; }) : [];
+    var links = m && m.links ? m.links
+      .map(function (l) { return l ? Object.assign({}, l, { url: safeHttpsUrl(l.url) }) : null; })
+      .filter(function (l) { return l && l.url; }) : [];
     if (!links.length) return null;
     var box = el('<aside class="monetize-card" aria-label="紹介リンク">' +
       (m.label ? '<div class="monetize-label">' + esc(m.label) + '</div>' : '') +
@@ -1537,7 +1550,9 @@ window.COFFEE_LOG_CONFIG = {
       '<p class="monetize-disclosure">紹介リンクを含みます</p></aside>');
     var wrap = box.querySelector('.monetize-links');
     links.forEach(function (l) {
-      var a = el('<a class="monetize-link" href="' + l.url + '" target="_blank" rel="sponsored nofollow noopener noreferrer">' + esc(l.label || '詳しく見る') + '</a>');
+      var a = el('<a class="monetize-link" target="_blank" rel="sponsored nofollow noopener noreferrer"></a>');
+      a.href = l.url; // 検証済みのhttps URLをDOMプロパティとして設定（HTML文字列には埋め込まない）
+      a.textContent = l.label || '詳しく見る';
       a.addEventListener('click', function () { trackEvent('affiliate_click', { bean_id: d.id, link_type: l.type || 'affiliate' }); });
       wrap.appendChild(a);
     });
