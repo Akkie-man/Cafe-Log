@@ -2307,9 +2307,27 @@ window.COFFEE_LOG_CONFIG = {
     root.appendChild(logRows(filtered.slice().reverse()));
   }
 
-  function contactFooter() {
-    return el('<div class="contact-footer"><p>不具合のご報告やお困りごとは、運営「こってり開発部」までご連絡ください。パスワード・認証コード・リカバリーコードは送らないでください。</p>' +
-      '<a class="ghost-btn" href="https://www.instagram.com/kotteri_kaihatsubu/" target="_blank" rel="noopener noreferrer">Instagramで問い合わせる</a></div>');
+  function contactFooter(hidePrivacyLink) {
+    var box = el('<div class="contact-footer"><p>不具合のご報告やお困りごとは、運営「こってり開発部」までご連絡ください。パスワード・認証コード・リカバリーコードは送らないでください。</p>' +
+      '<a class="ghost-btn" href="https://www.instagram.com/kotteri_kaihatsubu/" target="_blank" rel="noopener noreferrer">Instagramで問い合わせる</a>' +
+      (hidePrivacyLink ? '' : '<button class="ghost-btn privacy-link" type="button">プライバシーポリシー</button>') + '</div>');
+    if (!hidePrivacyLink) box.querySelector('.privacy-link').addEventListener('click', function () { navigate('privacy'); });
+    return box;
+  }
+  function renderPrivacy(root) {
+    root.appendChild(topbar(true));
+    root.appendChild(el('<h1 class="page-title">プライバシーポリシー</h1>'));
+    root.appendChild(el('<div class="access-list">' +
+      '<div><b>運営</b><p>こってり開発部（個人による開発・運営）</p></div>' +
+      '<div><b>取得する情報</b><p>登録メールアドレス、認証に必要な情報、飲んだ記録（豆・ドリンクの種類、焙煎度、好みの評価、メモ、お店・商品名）、アプリの利用状況。</p></div>' +
+      '<div><b>利用目的</b><p>ログイン認証、記録の保存・同期、集計やおすすめ表示、サービスの改善、お問い合わせへの対応のために利用します。</p></div>' +
+      '<div><b>利用しているサービス</b><p>データの保存・認証にSupabase、メール配信にResend、アプリの公開にVercel、利用状況の分析にGoogle Analyticsを利用しています。お問い合わせ窓口としてInstagram（Metaのサービス）を利用しています。</p></div>' +
+      '<div><b>記録・アカウントの削除</b><p>飲んだ記録は、記録一覧の削除ボタンからいつでも削除できます。アカウントとクラウドに保存した記録は「アカウントと保存」画面の「退会・データ削除」から削除でき、削除すると元に戻せません。ログインできないなど、アプリ内で削除できない場合は、下記の問い合わせ先までご連絡ください。</p></div>' +
+      '<div><b>開示・訂正・利用停止のご相談</b><p>ご自身の情報の開示・訂正・利用停止などをご希望の場合は、問い合わせ先までご連絡ください。ご本人であることを確認のうえ対応します。</p></div>' +
+      '<div><b>Google Analyticsについて</b><p>アプリの利用状況を把握するため、Google Analyticsを利用しています。Cookie等を通じて、匿名化された利用データがGoogleに送信されます。</p></div></div>'));
+    var ga = el('<a class="ghost-btn" href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Googleのプライバシーポリシーを見る</a>');
+    root.appendChild(ga);
+    root.appendChild(contactFooter(true));
   }
   function authErrorMessage(mode, error) {
     var msg = (error && error.message) || '';
@@ -2487,7 +2505,7 @@ window.COFFEE_LOG_CONFIG = {
         return ['registry', 'passport', 'country', 'stock', 'start', 'results'].indexOf(s.screen) !== -1;
       });
       section = parent ? ({ country: 'passport', results: 'registry' }[parent.screen] || parent.screen) : 'start';
-    } else if (['badges', 'account', 'newPassword'].indexOf(section) !== -1) section = 'start';
+    } else if (['badges', 'account', 'newPassword', 'privacy'].indexOf(section) !== -1) section = 'start';
     [
       { screen: 'start', label: 'ホーム' },
       { screen: 'registry', label: '探す' },
@@ -2508,7 +2526,7 @@ window.COFFEE_LOG_CONFIG = {
   }
 
   var SCREENS = { start: renderStart, passport: renderPassport, map: renderMap, country: renderCountry, genreSelect: renderGenreSelect,
-    question: renderQuestion, results: renderResults, detail: renderDetail, registry: renderRegistry, stock: renderStock, badges: renderBadges, account: renderAccount, newPassword: renderNewPassword };
+    question: renderQuestion, results: renderResults, detail: renderDetail, registry: renderRegistry, stock: renderStock, badges: renderBadges, account: renderAccount, newPassword: renderNewPassword, privacy: renderPrivacy };
   function render() {
     var app = document.getElementById("app");
     app.innerHTML = "";
