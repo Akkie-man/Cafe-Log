@@ -119,6 +119,9 @@
   .log-row .row-body-btn:hover:not(:disabled) { background: var(--paper-2); }
   .log-row .row-delete { flex: none; width: 40px; border: none; background: none; color: var(--ink-3); font-size: 15px; }
   .log-row .row-delete:hover { color: var(--vermilion); }
+  .log-row .row-share { flex: none; width: 40px; border: none; background: none; color: var(--ink-3); font-size: 15px; }
+  .log-row .row-share:hover { color: var(--indigo); }
+  .passport-share { margin: 10px 0 4px; }
 
   .stat-line { display: flex; gap: 24px; font-size: 12px; color: var(--ink-2); }
   .stat-line b { font-family: var(--font-stamp); font-weight: 500; font-size: 20px; color: var(--ink); margin-right: 4px; }
@@ -1128,6 +1131,7 @@ window.COFFEE_LOG_CONFIG = {
   var BASE_LABEL = { espresso: "エスプレッソ系", drip: "ドリップ・抽出系", cold: "水出し・アイス系" };
   var REGION_LABEL = { africa: "アフリカ・アラビア", latam: "中南米・カリブ", asia: "アジア・太平洋", blend: "ブレンド" };
   var ROAST_LABEL = { light: "浅煎り", medium: "中煎り", dark: "深煎り" };
+  var PROCESS_LABEL = { washed: "ウォッシュト", natural: "ナチュラル", honey: "ハニー" };
   var SHAPE_LABEL = { demitasse: "デミタス", cup: "カップ", mug: "マグ", glass: "グラス" };
   var PREF_LABEL = { 3: "好み", 2: "ふつう", 1: "好みじゃない" };
   var SCENE_AXIS = { key: "scene", left: "ほっと一息", right: "シャキッと" };
@@ -1250,11 +1254,11 @@ window.COFFEE_LOG_CONFIG = {
   }
   function fromRow(r) {
     return { id: r.id, drinkId: r.drink_id, timestamp: r.drank_at,
-      preference: r.preference, note: r.note || '', place: r.place || '', roast: r.roast || null };
+      preference: r.preference, note: r.note || '', place: r.place || '', roast: r.roast || null, process: r.process || null };
   }
   function toRow(l, uid) {
     return { id: l.id, user_id: uid, drink_id: l.drinkId, drank_at: l.timestamp,
-      preference: l.preference, note: l.note || '', place: l.place || '', roast: l.roast || null };
+      preference: l.preference, note: l.note || '', place: l.place || '', roast: l.roast || null, process: l.process || null };
   }
   async function syncAccount(user) {
     if (!api || !user || cloudBusy) return;
@@ -1272,7 +1276,7 @@ window.COFFEE_LOG_CONFIG = {
       }
       var all = [], offset = 0, page;
       do {
-        page = await api.from('coffee_logs').select('id,drink_id,drank_at,preference,note,place,roast')
+        page = await api.from('coffee_logs').select('id,drink_id,drank_at,preference,note,place,roast,process')
           .eq('user_id', user.id).order('drank_at', { ascending: true }).order('id', { ascending: true })
           .range(offset, offset + 499);
         if (page.error) throw page.error;
@@ -1363,6 +1367,7 @@ window.COFFEE_LOG_CONFIG = {
     return Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a] || a.localeCompare(b); })[0];
   }
   function recordedRoast(logs){return topValue(logs.filter(function(l){var d=findDrink(l.drinkId);return d&&d.genre==='bean'&&l.preference===3&&ROAST_LABEL[l.roast];}).map(function(l){return l.roast;}));}
+  function recordedProcess(logs){return topValue(logs.filter(function(l){var d=findDrink(l.drinkId);return d&&d.genre==='bean'&&l.preference===3&&PROCESS_LABEL[l.process];}).map(function(l){return l.process;}));}
   function evaluated(genre) {
     var latest = {};
     stock.forEach(function (l) {
@@ -1446,6 +1451,7 @@ window.COFFEE_LOG_CONFIG = {
       return distinct(s, function (d) { return isBean(d) && d.region !== "blend"; }, "region") >= 3;
     }},
     { id: "roasts", label: "焙煎度くらべ", desc: "浅煎り/中煎り/深煎りの豆をすべて記録する", check: function (s) { return new Set(s.filter(function(l){var d=findDrink(l.drinkId);return d&&isBean(d)&&ROAST_LABEL[l.roast];}).map(function(l){return l.roast;})).size>=3; } },
+    { id: "processes", label: "精製くらべ", desc: "ウォッシュト/ナチュラル/ハニーの豆をすべて記録する", check: function (s) { return new Set(s.filter(function(l){var d=findDrink(l.drinkId);return d&&isBean(d)&&PROCESS_LABEL[l.process];}).map(function(l){return l.process;})).size>=3; } },
     { id: "noted", label: "記録魔", desc: "追加情報を書いた記録を5件残す", check: function (s) { return s.filter(function (l) { return l.note; }).length >= 5; } },
     { id: "both", label: "二刀流", desc: "ドリンクと豆をどちらも記録する", check: function (s) { return countMatching(s, isDrink) > 0 && countMatching(s, isBean) > 0; } },
     { id: "drip_home", label: "おうちカフェ", desc: "ドリップOKのドリンクを3杯記録する", check: function (s) { return countMatching(s, function (d) { return d.tool === "drip"; }) >= 3; } },
@@ -1648,21 +1654,21 @@ window.COFFEE_LOG_CONFIG = {
   function emptyFilters(genre) { var f = {}; GENRES[genre].filters.forEach(function (g) { f[g.key] = []; }); return f; }
   function freshState() {
     return { screen: "start", genre: "drink", registryGenre: "bean", stockGenre: "all", answers: {}, qIndex: 0, results: [],
-      detailId: null, pendingPref: null, pendingRoast: null, pendingNote: "", pendingPlace: "", pendingDate: "", searchText: "", filters: emptyFilters("bean"), country: null, authMode: 'login', justStamped: false, justEarnedBadge: null };
+      detailId: null, pendingPref: null, pendingRoast: null, pendingProcess: null, pendingNote: "", pendingPlace: "", pendingDate: "", searchText: "", filters: emptyFilters("bean"), country: null, authMode: 'login', justStamped: false, justEarnedBadge: null };
   }
   var state = freshState();
   var history = [];
   function navigate(screen, patch) {
     history.push(Object.assign({}, state, { justStamped: false }));
     state = Object.assign({}, state, { screen: screen, justStamped: false, justEarnedBadge: null },
-      screen === "detail" ? { pendingPref: null, pendingRoast: null, pendingNote: "", pendingPlace: "", pendingDate: "" } : {}, patch || {});
+      screen === "detail" ? { pendingPref: null, pendingRoast: null, pendingProcess: null, pendingNote: "", pendingPlace: "", pendingDate: "" } : {}, patch || {});
     render();
     window.scrollTo(0, 0);
   }
   function goBack() { state = history.length ? history.pop() : freshState(); render(); }
 
   function hasUnsavedInput() {
-    return state.screen === "question" || (state.screen === "detail" && (state.pendingPref || state.pendingRoast || state.pendingNote || state.pendingPlace || state.pendingDate));
+    return state.screen === "question" || (state.screen === "detail" && (state.pendingPref || state.pendingRoast || state.pendingProcess || state.pendingNote || state.pendingPlace || state.pendingDate));
   }
   function confirmDeleteLog(l) {
     var d = findDrink(l.drinkId);
@@ -1859,12 +1865,13 @@ window.COFFEE_LOG_CONFIG = {
       '<div class="daily-name">' + esc(today.name) + '</div><div class="daily-reason">' +
       (next ? esc(next.reason) : '今日はこの産地をもう一度。') +
       '</div><div class="daily-actions"><button class="daily-detail">この豆を見る</button><button class="daily-quiz">気分から選ぶ</button></div></section>');
-    todayCard.querySelector('.daily-detail').addEventListener('click', function () { navigate('detail', { detailId: today.id, pendingPref: null, pendingRoast: null, pendingNote: '', pendingPlace: '', pendingDate: '' }); });
+    todayCard.querySelector('.daily-detail').addEventListener('click', function () { navigate('detail', { detailId: today.id, pendingPref: null, pendingRoast: null, pendingProcess: null, pendingNote: '', pendingPlace: '', pendingDate: '' }); });
     todayCard.querySelector('.daily-quiz').addEventListener('click', function () { navigate('genreSelect'); });
     root.appendChild(todayCard);
     var loved = stock.filter(function (l) { return l.preference === 3; }).map(function (l) { return findDrink(l.drinkId); }).filter(Boolean);
     var favorite = topValue(loved.filter(function (d) { return d.genre === 'bean' && d.country !== 'blend'; }).map(function (d) { return d.country; }));
     var roast = recordedRoast(stock);
+    var process = recordedProcess(stock);
     var likedBeans = tasteProfile('bean').liked;
     var avgAcidity = likedBeans.reduce(function (n, d) { return n + d.tags.acidity; }, 0) / (likedBeans.length || 1);
     var tasteText = likedBeans.length < 2 ? '記録が増えると見えてきます' :
@@ -1873,6 +1880,7 @@ window.COFFEE_LOG_CONFIG = {
       '<div class="profile-item">飲んだ記録<b>' + stock.length + ' 杯</b></div><div class="profile-item">獲得バッジ<b>' + Object.keys(earnedBadgeIds(stock)).length + ' / ' + BADGES.length + '</b></div>' +
       '<div class="profile-item">お気に入りの国<b>' + (favorite ? COUNTRIES[favorite].ja : 'これから') + '</b></div>' +
       '<div class="profile-item">好きな焙煎<b>' + (roast ? ROAST_LABEL[roast] : 'これから') + '</b></div>' +
+      '<div class="profile-item">好きな精製<b>' + (process ? PROCESS_LABEL[process] : 'これから') + '</b></div>' +
       '<div class="profile-taste">味の傾向：' + tasteText + '</div></div></section>'));
     root.appendChild(rowButton('<div class="row-body"><div class="row-title">達成バッジを見る</div></div>', function () { navigate('badges'); }));
   }
@@ -1885,13 +1893,19 @@ window.COFFEE_LOG_CONFIG = {
     var status2 = saveStatus(); if (status2) root.appendChild(status2);
     root.appendChild(el('<div class="page-lead">' + countryCount(p) + ' / ' + COUNTRY_KEYS.length +
       ' か国。あと ' + (COUNTRY_KEYS.length - countryCount(p)) + ' か国で制覇。未達成の国を押すと、試せる豆が見られます。</div>'));
+    var passportShare = el('<button class="ghost-btn passport-share">パスポートの進捗をシェア</button>');
+    passportShare.addEventListener('click', function () {
+      var text = '産地パスポート、' + countryCount(p) + '/' + COUNTRY_KEYS.length + 'か国 集めました！☕ #COFFEELOG';
+      shareText(passportShare, text, 'COFFEE LOG 産地パスポート');
+    });
+    root.appendChild(passportShare);
     root.appendChild(passportSwitch(false));
     root.appendChild(el('<div class="passport-progress" role="progressbar" aria-label="産地の達成率" aria-valuemin="0" aria-valuemax="' + COUNTRY_KEYS.length + '" aria-valuenow="' + countryCount(p) + '"><span style="width:' + (100 * countryCount(p) / COUNTRY_KEYS.length) + '%"></span></div>'));
     var next = nextBean();
     if (next) {
       var nextCard = el('<button class="next-card"><div class="daily-eyebrow">NEXT · 次の一杯</div><strong>' + esc(next.bean.name) +
         '</strong><span>' + esc(next.reason) + '</span></button>');
-      nextCard.addEventListener('click', function () { navigate('detail', { detailId: next.bean.id, pendingPref: null, pendingRoast: null, pendingNote: '', pendingPlace: '', pendingDate: '' }); });
+      nextCard.addEventListener('click', function () { navigate('detail', { detailId: next.bean.id, pendingPref: null, pendingRoast: null, pendingProcess: null, pendingNote: '', pendingPlace: '', pendingDate: '' }); });
       root.appendChild(nextCard);
     }
     root.appendChild(el('<div class="section-title">PAST · これまでの産地</div>'));
@@ -2050,7 +2064,7 @@ window.COFFEE_LOG_CONFIG = {
     beans.forEach(function (d) {
       rows.appendChild(rowButton(swatchHtml(d, "sm") + '<div class="row-body"><div class="row-title">' + d.name +
         '</div><div class="row-sub">' + d.line + '</div><div class="brew-line">' + brewSummary(d) + "</div></div>",
-        function () { navigate("detail", { detailId: d.id, pendingPref: null, pendingRoast: null, pendingNote: "" }); }));
+        function () { navigate("detail", { detailId: d.id, pendingPref: null, pendingRoast: null, pendingProcess: null, pendingNote: "" }); }));
     });
     root.appendChild(rows);
   }
@@ -2106,6 +2120,16 @@ window.COFFEE_LOG_CONFIG = {
     root.appendChild(opts);
   }
 
+  function shareText(button, text, title) {
+    if (navigator.share) { navigator.share({ title: title, text: text }).catch(function () {}); return; }
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(function () {
+        var orig = button.textContent;
+        button.textContent = 'コピーしました';
+        setTimeout(function () { button.textContent = orig; }, 1500);
+      }).catch(function () {});
+    }
+  }
   function diagnosisText(genre, a) {
     var scene = a.scene || 0, body = a.body || 0;
     var sceneP = scene < 0 ? "くつろぎの時間" : scene > 0 ? "シャキッとしたい時" : "いつものひととき";
@@ -2131,10 +2155,7 @@ window.COFFEE_LOG_CONFIG = {
     var share = visa.querySelector(".visa-share");
     share.addEventListener("click", function () {
       var t = text + "\nおすすめは「" + (state.results[0] ? state.results[0].name : "") + "」でした。 #COFFEELOG";
-      if (navigator.share) navigator.share({ title: "COFFEE LOG診断", text: t }).catch(function () {});
-      else if (navigator.clipboard) navigator.clipboard.writeText(t).then(function () {
-        share.textContent = "コピーしました"; setTimeout(function () { share.textContent = "この診断をシェア"; }, 1500);
-      }).catch(function () {});
+      shareText(share, t, "COFFEE LOG診断");
     });
     root.appendChild(visa);
     root.appendChild(el('<h1 class="page-title">今日のおすすめ</h1>'));
@@ -2149,7 +2170,7 @@ window.COFFEE_LOG_CONFIG = {
         '<div class="result-reason">' + esc(recommendationReason(d, state.genre, adventure)) + '</div>' +
         (d.genre === "bean" ? '<div class="brew-line">' + brewSummary(d) + "</div>" : "") +
         '</div><span class="row-arrow">&rsaquo;</span></button>');
-      b.addEventListener("click", function () { navigate("detail", { detailId: d.id, pendingPref: null, pendingRoast: null, pendingNote: "" }); });
+      b.addEventListener("click", function () { navigate("detail", { detailId: d.id, pendingPref: null, pendingRoast: null, pendingProcess: null, pendingNote: "" }); });
       list.appendChild(b);
     });
     root.appendChild(list);
@@ -2319,7 +2340,7 @@ window.COFFEE_LOG_CONFIG = {
     var rel = el('<div class="section"><div class="section-title">' + g.relatedLabel + '</div><div class="chip-row"></div></div>');
     relatedDrinks(d).forEach(function (x) {
       var c = el('<button class="chip">' + x.name + "</button>");
-      c.addEventListener("click", function () { navigate("detail", { detailId: x.id, pendingPref: null, pendingRoast: null, pendingNote: "" }); });
+      c.addEventListener("click", function () { navigate("detail", { detailId: x.id, pendingPref: null, pendingRoast: null, pendingProcess: null, pendingNote: "" }); });
       rel.querySelector(".chip-row").appendChild(c);
     });
     root.appendChild(rel);
@@ -2342,11 +2363,14 @@ window.COFFEE_LOG_CONFIG = {
       prefRow.appendChild(b);
     });
     rec.appendChild(prefRow);
-    var roastInput=null;
+    var roastInput=null, processInput=null;
     if(d.genre==='bean'){
       rec.appendChild(el('<label class="field-label" for="actual-roast">実際に飲んだ豆の焙煎度</label>'));
       roastInput=el('<select class="record-input" id="actual-roast"><option value="">わからない・未設定</option><option value="light">浅煎り</option><option value="medium">中煎り</option><option value="dark">深煎り</option></select>');
       roastInput.value=state.pendingRoast||'';roastInput.onchange=function(){state.pendingRoast=roastInput.value;};rec.appendChild(roastInput);
+      rec.appendChild(el('<label class="field-label" for="actual-process">実際に飲んだ豆の精製方法</label>'));
+      processInput=el('<select class="record-input" id="actual-process"><option value="">わからない・未設定</option><option value="washed">ウォッシュト</option><option value="natural">ナチュラル</option><option value="honey">ハニー</option></select>');
+      processInput.value=state.pendingProcess||'';processInput.onchange=function(){state.pendingProcess=processInput.value;};rec.appendChild(processInput);
     }
     rec.appendChild(el('<label class="field-label" for="note">追加情報<span class="field-hint">任意</span></label>'));
     var ta = el('<textarea id="note" maxlength="300" placeholder="' +
@@ -2379,7 +2403,8 @@ window.COFFEE_LOG_CONFIG = {
         err.textContent = '飲んだ日を確認してください'; return;
       }
       var entry = { drinkId: d.id, timestamp: drank.toISOString(), preference: state.pendingPref,
-        note: (state.pendingNote || '').trim(), place: (state.pendingPlace || '').trim(), roast:roastInput&&roastInput.value||null };
+        note: (state.pendingNote || '').trim(), place: (state.pendingPlace || '').trim(),
+        roast: roastInput&&roastInput.value||null, process: processInput&&processInput.value||null };
       var earnedBefore = earnedBadgeIds(stock);
       var newOrigin = d.genre === 'bean' && d.country !== 'blend' && !passport(stock)[d.country];
       var storageMethod = authUser ? 'cloud' : 'local';
@@ -2391,7 +2416,7 @@ window.COFFEE_LOG_CONFIG = {
       var newlyEarned = !authUser && BADGES.find(function (b) {
         return !earnedBefore[b.id] && b.check(stock);
       });
-      state.pendingPref = null; state.pendingRoast=null; state.pendingNote = ''; state.pendingPlace = ''; state.pendingDate = '';
+      state.pendingPref = null; state.pendingRoast=null; state.pendingProcess=null; state.pendingNote = ''; state.pendingPlace = ''; state.pendingDate = '';
       if (d.genre === "bean") navigate("country", { country: d.country, justStamped: true, justEarnedBadge: newlyEarned || null });
       else navigate("stock", { justEarnedBadge: newlyEarned || null });
     });
@@ -2468,7 +2493,7 @@ window.COFFEE_LOG_CONFIG = {
         rows.appendChild(rowButton(swatchHtml(d, "sm") + '<div class="row-body"><div class="row-title">' + d.name + flags(d) +
           '</div><div class="row-sub">' + subLabel(d) + "</div>" +
           (d.genre === "bean" ? '<div class="brew-line">' + brewSummary(d) + "</div>" : "") + "</div>",
-          function () { navigate("detail", { detailId: d.id, pendingPref: null, pendingRoast: null, pendingNote: "" }); }));
+          function () { navigate("detail", { detailId: d.id, pendingPref: null, pendingRoast: null, pendingProcess: null, pendingNote: "" }); }));
       });
       listWrap.appendChild(rows);
     }
@@ -2481,15 +2506,25 @@ window.COFFEE_LOG_CONFIG = {
     logs.forEach(function (l) {
       var d = findDrink(l.drinkId);
       var inner = (d ? swatchHtml(d, "sm") : "") + '<div class="row-body"><div class="row-title">' + (d ? d.name : "不明") +
-        '</div>' + (d&&d.genre==='bean'?'<div class="row-sub">焙煎：'+(ROAST_LABEL[l.roast]||'未設定')+'</div>':'') + (l.place ? '<div class="row-sub">' + esc(l.place) + '</div>' : '') +
+        '</div>' + (d&&d.genre==='bean'?'<div class="row-sub">焙煎：'+(ROAST_LABEL[l.roast]||'未設定')+'・精製：'+(PROCESS_LABEL[l.process]||'未設定')+'</div>':'') + (l.place ? '<div class="row-sub">' + esc(l.place) + '</div>' : '') +
         (l.note ? '<div class="row-sub note">「' + esc(l.note) + '」</div>' : '') +
         '<div class="row-meta">' + fmtDate(l.timestamp) + " ・ " + (d ? (d.genre === "bean" ? COUNTRIES[d.country].ja : "ドリンク") : "") +
         " ・ " + (PREF_LABEL[l.preference] || "") + "</div></div>";
       var wrap = el('<div class="log-row"></div>');
       var body = el('<button class="row-body-btn" type="button">' + inner + '<span class="row-arrow">&rsaquo;</span></button>');
-      if (d) body.addEventListener("click", function () { navigate("detail", { detailId: d.id, pendingPref: null, pendingRoast: null, pendingNote: "" }); });
+      if (d) body.addEventListener("click", function () { navigate("detail", { detailId: d.id, pendingPref: null, pendingRoast: null, pendingProcess: null, pendingNote: "" }); });
       else body.disabled = true;
       wrap.appendChild(body);
+      if (d) {
+        var shareBtn = el('<button class="row-share" type="button" aria-label="この記録をシェア">↗</button>');
+        shareBtn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          var text = fmtDate(l.timestamp) + '、' + d.name + 'を飲みました。' +
+            (PREF_LABEL[l.preference] ? '（' + PREF_LABEL[l.preference] + '）' : '') + ' #COFFEELOG';
+          shareText(shareBtn, text, 'COFFEE LOG');
+        });
+        wrap.appendChild(shareBtn);
+      }
       if (l.id) {
         var del = el('<button class="row-delete" type="button" aria-label="この記録を削除">🗑</button>');
         del.addEventListener("click", function (e) { e.stopPropagation(); confirmDeleteLog(l); });
