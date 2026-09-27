@@ -233,13 +233,19 @@
   .contact-footer { margin-top: 28px; padding-top: 14px; border-top: 1px dashed var(--line); text-align: center; }
   .contact-footer p { font-size: 11px; color: var(--ink-3); margin-bottom: 8px; line-height: 1.6; }
   .contact-footer .ghost-btn { display: inline-block; width: auto; padding: 6px 14px; font-size: 11px; }
-  .monetize-card { margin-top: 18px; padding: 12px 14px; border: 1px solid var(--line);
-    border-radius: 10px; background: var(--paper-2); }
-  .monetize-label { font-size: 12px; font-weight: 700; margin-bottom: 8px; }
-  .monetize-links { display: flex; flex-direction: column; gap: 8px; }
-  .monetize-link { display: inline-block; font-size: 12px; font-weight: 700; color: var(--indigo);
-    text-decoration: underline; text-underline-offset: 3px; }
-  .monetize-disclosure { font-size: 11px; color: var(--ink-3); margin: 8px 0 0; }
+  .affiliate-section { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .affiliate-heading-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .affiliate-title { font-size: 14px; font-weight: 700; }
+  .affiliate-tag { font-size: 9px; font-weight: 700; color: var(--ink-3); border: 1px solid var(--ink-3);
+    border-radius: 4px; padding: 1px 5px; }
+  .affiliate-disclosure { font-size: 10px; color: var(--ink-3); margin-top: 10px; line-height: 1.6; }
+  .affiliate-row { display: flex; flex-wrap: wrap; gap: 10px; }
+  .affiliate-col { flex: 1 1 9em; min-width: 9em; background: var(--paper-2); border: 1px solid var(--line);
+    border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; }
+  .affiliate-heading { font-size: 11px; font-weight: 700; color: var(--ink-3); margin-bottom: 6px; }
+  .affiliate-name { font-size: 13px; font-weight: 700; margin-bottom: 4px; overflow-wrap: break-word; }
+  .affiliate-note { font-size: 11px; color: var(--ink-2); margin-bottom: 10px; line-height: 1.6; }
+  .affiliate-link { margin-top: auto; text-align: center; }
   .modal-confirm.danger { background: var(--vermilion); color: var(--paper); border-color: var(--vermilion); }
   .auth-links { display: grid; gap: 2px; }
   .auth-links .ghost-btn { min-height: 44px; }
@@ -1511,25 +1517,83 @@ window.COFFEE_LOG_CONFIG = {
   }
 
   /* ============================================================
-     MONETIZATION — 豆詳細ページの紹介リンク枠。
+     AFFILIATE — 豆詳細ページの紹介欄(Amazon)。
+     左：豆の紹介リンク（豆ごと、商品 or 検索）。右：運営者が使っている道具（全豆共通・固定）。
+     2つは独立した枠で、どちらかがあるからもう片方を隠す、という代替表示ではない。
      方針（変更しないこと）:
      - 店舗から料金を受け取る有料掲載、順位操作、評価操作は実装しない。
-       ここに何を置くかは編集部の判断であり、支払いの有無で変わらない。
      - このデータは評価（preference）・検索/並び順（relatedDrinks, 診断結果, フィルタ）・
        産地情報（BEAN_READING, FLAVOR_INFO, COUNTRIES等）のどれからも参照されない。
-     - リンクはただの外部URL。ユーザーの記録・メールアドレス・認証情報など、
-       このアプリが持つ情報は一切URLやパラメータに含めず、広告主・紹介先へ渡さない。
-     - リンク未設定の豆では枠自体を表示しない。設定した場合は、リンクの近くに
-       「紹介リンクを含みます」と表示する。
-     データ形式（値がない豆では何も表示しない）:
-       monetization: { label: "この豆を試す",
-         links: [ { label: "豆の販売ページを見る", url: "https://example.com/", type: "affiliate" } ] }
-     本番URLや実在商品のリンクは、運営者が内容と規約を確認してから設定する。ダミーURLは公開版に残さない。
+     - リンクはただの外部URL。ユーザーの記録・メールアドレス・認証情報などは一切渡さない。
+     - 実飲していない豆商品を「愛用」「実飲済み」「おすすめ」と表現しない。
+     - MONETIZE_ENABLED を false にすると、全豆・全画面で紹介欄そのものを非表示にできる。
+     データ形式:
+       BEAN_PRODUCT_LINK[豆ID] = { url: "https://...", kind: "product" | "search" }
+         kind:"product" → ボタン文言「Amazonで商品を見る」
+         kind:"search"  → ボタン文言「Amazonで豆を探す」＋「産地・精製・焙煎度などは販売ページでご確認ください。」
+       GEAR_ITEM = { enabled, name, note, buttonLabel, url, productId, asin }（全豆共通・1件）
+     豆の正式な紹介リンクはまだ取得していないため、BEAN_PRODUCT_LINK は空のままにする。
+     未取得のリンクを作ったり、AmazonのURLへ推測で紹介IDを付けたりしない。
      ============================================================ */
-  var MONETIZATION = {
-    ethiopia_yirgacheffe: { label: "この豆を試す（確認用テストリンク）", links: [
-      { label: "テストリンクを開く", url: "https://example.com/", type: "affiliate" }
-    ] }
+  var MONETIZE_ENABLED = true;
+  var BEAN_PRODUCT_LINK = {
+    australia: { url: "https://www.amazon.co.jp/s?k=%E3%82%AA%E3%83%BC%E3%82%B9%E3%83%88%E3%83%A9%E3%83%AA%E3%82%A2%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    blue_mountain: { url: "https://www.amazon.co.jp/s?k=%E3%82%B8%E3%83%A3%E3%83%9E%E3%82%A4%E3%82%AB%20%E3%83%96%E3%83%AB%E3%83%BC%E3%83%9E%E3%82%A6%E3%83%B3%E3%83%86%E3%83%B3%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    bolivia: { url: "https://www.amazon.co.jp/s?k=%E3%83%9C%E3%83%AA%E3%83%93%E3%82%A2%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    brazil: { url: "https://www.amazon.co.jp/s?k=%E3%83%96%E3%83%A9%E3%82%B8%E3%83%AB%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    burundi: { url: "https://www.amazon.co.jp/s?k=%E3%83%96%E3%83%AB%E3%83%B3%E3%82%B8%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    colombia: { url: "https://www.amazon.co.jp/s?k=%E3%82%B3%E3%83%AD%E3%83%B3%E3%83%93%E3%82%A2%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    costa_rica_honey: { url: "https://www.amazon.co.jp/s?k=%E3%82%B3%E3%82%B9%E3%82%BF%E3%83%AA%E3%82%AB%20%E3%83%8F%E3%83%8B%E3%83%BC%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    cuba: { url: "https://www.amazon.co.jp/s?k=%E3%82%AD%E3%83%A5%E3%83%BC%E3%83%90%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    dominican: { url: "https://www.amazon.co.jp/s?k=%E3%83%89%E3%83%9F%E3%83%8B%E3%82%AB%E5%85%B1%E5%92%8C%E5%9B%BD%20%E3%83%90%E3%83%A9%E3%82%AA%E3%83%8A%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    drc: { url: "https://www.amazon.co.jp/s?k=%E3%82%B3%E3%83%B3%E3%82%B4%E6%B0%91%E4%B8%BB%E5%85%B1%E5%92%8C%E5%9B%BD%20%E3%82%AD%E3%83%96%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    ecuador: { url: "https://www.amazon.co.jp/s?k=%E3%82%A8%E3%82%AF%E3%82%A2%E3%83%89%E3%83%AB%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    el_salvador: { url: "https://www.amazon.co.jp/s?k=%E3%82%A8%E3%83%AB%E3%82%B5%E3%83%AB%E3%83%90%E3%83%89%E3%83%AB%20%E3%83%91%E3%82%AB%E3%83%9E%E3%83%A9%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    espresso_blend: { url: "https://www.amazon.co.jp/s?k=%E3%82%A8%E3%82%B9%E3%83%97%E3%83%AC%E3%83%83%E3%82%BD%E3%83%96%E3%83%AC%E3%83%B3%E3%83%89%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    ethiopia_natural: { url: "https://www.amazon.co.jp/s?k=%E3%82%A8%E3%83%81%E3%82%AA%E3%83%94%E3%82%A2%20%E3%83%8A%E3%83%81%E3%83%A5%E3%83%A9%E3%83%AB%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    ethiopia_yirgacheffe: { url: "https://www.amazon.co.jp/s?k=%E3%82%A8%E3%83%81%E3%82%AA%E3%83%94%E3%82%A2%20%E3%82%A4%E3%83%AB%E3%82%AC%E3%83%81%E3%82%A7%E3%83%95%E3%82%A7%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    guatemala: { url: "https://www.amazon.co.jp/s?k=%E3%82%B0%E3%82%A2%E3%83%86%E3%83%9E%E3%83%A9%20%E3%82%A2%E3%83%B3%E3%83%86%E3%82%A3%E3%82%B0%E3%82%A2%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    haiti: { url: "https://www.amazon.co.jp/s?k=%E3%83%8F%E3%82%A4%E3%83%81%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    honduras: { url: "https://www.amazon.co.jp/s?k=%E3%83%9B%E3%83%B3%E3%82%B8%E3%83%A5%E3%83%A9%E3%82%B9%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    india_malabar: { url: "https://www.amazon.co.jp/s?k=%E3%82%A4%E3%83%B3%E3%83%89%20%E3%83%A2%E3%83%B3%E3%82%B9%E3%83%BC%E3%83%B3%E3%83%9E%E3%83%A9%E3%83%90%E3%83%BC%E3%83%AB%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    japan_okinawa: { url: "https://www.amazon.co.jp/s?k=%E6%97%A5%E6%9C%AC%20%E6%B2%96%E7%B8%84%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    kenya: { url: "https://www.amazon.co.jp/s?k=%E3%82%B1%E3%83%8B%E3%82%A2%20AA%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    kona: { url: "https://www.amazon.co.jp/s?k=%E3%83%8F%E3%83%AF%E3%82%A4%20%E3%82%B3%E3%83%8A%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    laos: { url: "https://www.amazon.co.jp/s?k=%E3%83%A9%E3%82%AA%E3%82%B9%20%E3%83%9C%E3%83%A9%E3%83%99%E3%83%B3%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    malawi: { url: "https://www.amazon.co.jp/s?k=%E3%83%9E%E3%83%A9%E3%82%A6%E3%82%A4%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    mandheling: { url: "https://www.amazon.co.jp/s?k=%E3%82%A4%E3%83%B3%E3%83%89%E3%83%8D%E3%82%B7%E3%82%A2%20%E3%83%9E%E3%83%B3%E3%83%87%E3%83%AA%E3%83%B3%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    mexico: { url: "https://www.amazon.co.jp/s?k=%E3%83%A1%E3%82%AD%E3%82%B7%E3%82%B3%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    mocha_java: { url: "https://www.amazon.co.jp/s?k=%E3%83%A2%E3%82%AB%E3%83%BB%E3%82%B8%E3%83%A3%E3%83%90%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    myanmar: { url: "https://www.amazon.co.jp/s?k=%E3%83%9F%E3%83%A3%E3%83%B3%E3%83%9E%E3%83%BC%20%E3%82%B7%E3%83%A3%E3%83%B3%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    nepal: { url: "https://www.amazon.co.jp/s?k=%E3%83%8D%E3%83%91%E3%83%BC%E3%83%AB%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    nicaragua: { url: "https://www.amazon.co.jp/s?k=%E3%83%8B%E3%82%AB%E3%83%A9%E3%82%B0%E3%82%A2%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    panama_geisha: { url: "https://www.amazon.co.jp/s?k=%E3%83%91%E3%83%8A%E3%83%9E%20%E3%82%B2%E3%82%A4%E3%82%B7%E3%83%A3%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    peru: { url: "https://www.amazon.co.jp/s?k=%E3%83%9A%E3%83%AB%E3%83%BC%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    philippines: { url: "https://www.amazon.co.jp/s?k=%E3%83%95%E3%82%A3%E3%83%AA%E3%83%94%E3%83%B3%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    png: { url: "https://www.amazon.co.jp/s?k=%E3%83%91%E3%83%97%E3%82%A2%E3%83%8B%E3%83%A5%E3%83%BC%E3%82%AE%E3%83%8B%E3%82%A2%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    puerto_rico: { url: "https://www.amazon.co.jp/s?k=%E3%83%97%E3%82%A8%E3%83%AB%E3%83%88%E3%83%AA%E3%82%B3%20%E3%83%A4%E3%82%A6%E3%82%B3%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    rwanda: { url: "https://www.amazon.co.jp/s?k=%E3%83%AB%E3%83%AF%E3%83%B3%E3%83%80%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    st_helena: { url: "https://www.amazon.co.jp/s?k=%E3%82%BB%E3%83%B3%E3%83%88%E3%83%98%E3%83%AC%E3%83%8A%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    taiwan: { url: "https://www.amazon.co.jp/s?k=%E5%8F%B0%E6%B9%BE%20%E9%98%BF%E9%87%8C%E5%B1%B1%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    tanzania: { url: "https://www.amazon.co.jp/s?k=%E3%82%BF%E3%83%B3%E3%82%B6%E3%83%8B%E3%82%A2%20%E3%82%AD%E3%83%AA%E3%83%9E%E3%83%B3%E3%82%B8%E3%83%A3%E3%83%AD%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    thailand: { url: "https://www.amazon.co.jp/s?k=%E3%82%BF%E3%82%A4%20%E3%83%89%E3%82%A4%E3%83%81%E3%83%A3%E3%83%B3%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    timor: { url: "https://www.amazon.co.jp/s?k=%E6%9D%B1%E3%83%86%E3%82%A3%E3%83%A2%E3%83%BC%E3%83%AB%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    toraja: { url: "https://www.amazon.co.jp/s?k=%E3%82%A4%E3%83%B3%E3%83%89%E3%83%8D%E3%82%B7%E3%82%A2%20%E3%83%88%E3%83%A9%E3%82%B8%E3%83%A3%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    uganda: { url: "https://www.amazon.co.jp/s?k=%E3%82%A6%E3%82%AC%E3%83%B3%E3%83%80%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    vietnam_robusta: { url: "https://www.amazon.co.jp/s?k=%E3%83%99%E3%83%88%E3%83%8A%E3%83%A0%20%E3%83%AD%E3%83%96%E3%82%B9%E3%82%BF%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    yemen: { url: "https://www.amazon.co.jp/s?k=%E3%82%A4%E3%82%A8%E3%83%A1%E3%83%B3%20%E3%83%A2%E3%82%AB%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    yunnan: { url: "https://www.amazon.co.jp/s?k=%E4%B8%AD%E5%9B%BD%20%E9%9B%B2%E5%8D%97%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    zambia: { url: "https://www.amazon.co.jp/s?k=%E3%82%B6%E3%83%B3%E3%83%93%E3%82%A2%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" },
+    zimbabwe: { url: "https://www.amazon.co.jp/s?k=%E3%82%B8%E3%83%B3%E3%83%90%E3%83%96%E3%82%A8%20%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&tag=kotterikaihat-22", kind: "search" }
+  };
+  var GEAR_ITEM = {
+    enabled: true,
+    name: "HARIO スイッチ360",
+    note: "運営者が使用している浸漬式ドリッパーです。",
+    buttonLabel: "Amazonで商品を見る",
+    url: "https://link.amazon/B0492TA7Q",
+    productId: "SSD-360-B",
+    asin: "B09JL4R6SX"
   };
   function safeHttpsUrl(url) {
     if (typeof url !== 'string' || !url) return null;
@@ -1538,24 +1602,43 @@ window.COFFEE_LOG_CONFIG = {
       return u.protocol === 'https:' ? u.href : null;
     } catch (e) { return null; }
   }
-  function monetizationSection(d) {
-    var m = MONETIZATION[d.id];
-    var links = m && m.links ? m.links
-      .map(function (l) { return l ? Object.assign({}, l, { url: safeHttpsUrl(l.url) }) : null; })
-      .filter(function (l) { return l && l.url; }) : [];
-    if (!links.length) return null;
-    var box = el('<aside class="monetize-card" aria-label="紹介リンク">' +
-      (m.label ? '<div class="monetize-label">' + esc(m.label) + '</div>' : '') +
-      '<div class="monetize-links"></div>' +
-      '<p class="monetize-disclosure">紹介リンクを含みます</p></aside>');
-    var wrap = box.querySelector('.monetize-links');
-    links.forEach(function (l) {
-      var a = el('<a class="monetize-link" target="_blank" rel="sponsored nofollow noopener noreferrer"></a>');
-      a.href = l.url; // 検証済みのhttps URLをDOMプロパティとして設定（HTML文字列には埋め込まない）
-      a.textContent = l.label || '詳しく見る';
-      a.addEventListener('click', function () { trackEvent('affiliate_click', { bean_id: d.id, link_type: l.type || 'affiliate' }); });
-      wrap.appendChild(a);
-    });
+  function safeTrack(name, params) {
+    try { trackEvent(name, params); } catch (e) {}
+  }
+  function affiliateLinkButton(url, label, onClick) {
+    var a = el('<a class="affiliate-link ghost-btn" target="_blank" rel="sponsored nofollow noopener noreferrer"></a>');
+    a.href = url; // 検証済みのhttps URLをDOMプロパティとして設定（HTML文字列には埋め込まない）
+    a.textContent = label;
+    a.addEventListener('click', onClick);
+    return a;
+  }
+  function affiliateSection(d) {
+    if (!MONETIZE_ENABLED || d.genre !== 'bean') return null;
+    var beanLink = BEAN_PRODUCT_LINK[d.id];
+    var beanUrl = beanLink ? safeHttpsUrl(beanLink.url) : null;
+    var gear = GEAR_ITEM && GEAR_ITEM.enabled !== false ? GEAR_ITEM : null;
+    var gearUrl = gear ? safeHttpsUrl(gear.url) : null;
+    if (!beanUrl && !gearUrl) return null;
+    var box = el('<section class="affiliate-section"><div class="affiliate-heading-row"><span class="affiliate-title">飲んでみるなら</span><span class="affiliate-tag">広告</span></div><div class="affiliate-row"></div><p class="affiliate-disclosure">Amazonのアソシエイトとして、こってり開発部は適格販売により収入を得ています。</p></section>');
+    var row = box.querySelector('.affiliate-row');
+    if (beanUrl) {
+      var isSearch = beanLink.kind === 'search';
+      var col = el('<div class="affiliate-col"><div class="affiliate-heading">この豆を探す</div>' +
+        (isSearch ? '<p class="affiliate-note">産地・精製・焙煎度などは販売ページでご確認ください。</p>' : '') + '</div>');
+      col.appendChild(affiliateLinkButton(beanUrl, isSearch ? 'Amazonで豆を探す' : 'Amazonで商品を見る', function () {
+        safeTrack('affiliate_click', { bean_id: d.id, link_type: isSearch ? '豆検索' : '豆商品', product_id: d.id });
+      }));
+      row.appendChild(col);
+    }
+    if (gearUrl) {
+      var col2 = el('<div class="affiliate-col"><div class="affiliate-heading">運営者が使っている道具</div>' +
+        '<div class="affiliate-name">' + esc(gear.name || '') + '</div>' +
+        (gear.note ? '<p class="affiliate-note">' + esc(gear.note) + '</p>' : '') + '</div>');
+      col2.appendChild(affiliateLinkButton(gearUrl, gear.buttonLabel || 'Amazonで商品を見る', function () {
+        safeTrack('affiliate_click', { bean_id: d.id, link_type: '器具', product_id: gear.asin || gear.productId || 'gear' });
+      }));
+      row.appendChild(col2);
+    }
     return box;
   }
 
@@ -2241,10 +2324,8 @@ window.COFFEE_LOG_CONFIG = {
     });
     root.appendChild(rel);
 
-    if (d.genre === 'bean') {
-      var monetize = monetizationSection(d);
-      if (monetize) root.appendChild(monetize);
-    }
+    var affiliate = affiliateSection(d);
+    if (affiliate) root.appendChild(affiliate);
 
     // 記録フォーム
     var rec = el('<div class="record"></div>');
