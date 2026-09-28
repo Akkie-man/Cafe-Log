@@ -2,6 +2,8 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<!-- Google AdSense: 所有権確認専用のメタタグ。広告配信スクリプトは審査後、有効化のタイミングで別途追加する。 -->
+<meta name="google-adsense-account" content="ca-pub-4960959858706803">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>COFFEE LOG | 一杯から世界を旅する</title>
 <meta name="robots" content="index,follow">
@@ -1623,7 +1625,7 @@ window.COFFEE_LOG_CONFIG = {
        3. ads.txt の設置
        4. プライバシーポリシーの広告項目をAdSense向けに具体化する
      ============================================================ */
-  var ADSENSE_CONFIG = { enabled: false, publisherId: null, slotId: null };
+  var ADSENSE_CONFIG = { enabled: false, publisherId: "ca-pub-4960959858706803", slotId: null };
   function adSlot() {
     if (!ADSENSE_CONFIG.enabled || !ADSENSE_CONFIG.publisherId || !ADSENSE_CONFIG.slotId) return null;
     var box = el('<section class="adsense-section"><div class="adsense-tag">広告</div><ins class="adsbygoogle" style="display:block"></ins></section>');
@@ -1632,8 +1634,11 @@ window.COFFEE_LOG_CONFIG = {
     ins.setAttribute('data-ad-slot', ADSENSE_CONFIG.slotId);
     ins.setAttribute('data-ad-format', 'auto');
     ins.setAttribute('data-full-width-responsive', 'true');
-    try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
     return box;
+  }
+  function activateAdSlot() {
+    // DOMに追加された後にだけ呼ぶこと。呼び出し側は「append → activate」の順を守る。
+    try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
   }
   function safeHttpsUrl(url) {
     if (typeof url !== 'string' || !url) return null;
@@ -2388,7 +2393,7 @@ window.COFFEE_LOG_CONFIG = {
     root.appendChild(trivia);
 
     var ad = adSlot();
-    if (ad) root.appendChild(ad);
+    if (ad) { root.appendChild(ad); activateAdSlot(); }
 
     var rel = el('<div class="section"><div class="section-title">' + g.relatedLabel + '</div><div class="chip-row"></div></div>');
     relatedDrinks(d).forEach(function (x) {
@@ -2638,9 +2643,12 @@ window.COFFEE_LOG_CONFIG = {
       '<div><b>記録・アカウントの削除</b><p>飲んだ記録は、記録一覧の削除ボタンからいつでも削除できます。アカウントとクラウドに保存した記録は「アカウントと保存」画面の「退会・データ削除」から削除でき、削除すると元に戻せません。ログインできないなど、アプリ内で削除できない場合は、下記の問い合わせ先までご連絡ください。</p></div>' +
       '<div><b>開示・訂正・利用停止のご相談</b><p>ご自身の情報の開示・訂正・利用停止などをご希望の場合は、問い合わせ先までご連絡ください。ご本人であることを確認のうえ対応します。</p></div>' +
       '<div><b>Google Analyticsについて</b><p>アプリの利用状況を把握するため、Google Analyticsを利用しています。Cookie等を通じて、匿名化された利用データがGoogleに送信されます。</p></div>' +
-      '<div><b>紹介リンク・広告について</b><p>当サイトには、商品やサービスを紹介するリンクが含まれる場合があります。リンク経由で購入されると、運営者に紹介料が入ることがあります。紹介リンクを利用しても、COFFEE LOGに保存した記録やメールアドレスが紹介先へ送信されることはありません。紹介料の有無によって、豆の評価・検索や並び順・産地情報の内容を変えることはありません。将来、広告を導入する場合は、Cookie等の利用について本ページで改めて説明します。</p></div></div>'));
+      '<div><b>紹介リンク・広告について</b><p>当サイトには、商品やサービスを紹介するリンクが含まれる場合があります。リンク経由で購入されると、運営者に紹介料が入ることがあります。紹介リンクを利用しても、COFFEE LOGに保存した記録やメールアドレスが紹介先へ送信されることはありません。紹介料の有無によって、豆の評価・検索や並び順・産地情報の内容を変えることはありません。</p>' +
+      '<p>また、当サイトは第三者配信の広告サービス(Google AdSense)の利用を準備しています。現時点では広告は配信していませんが、Googleによる審査を申請するための準備(サイト所有権の確認等)を行っています。広告の配信を開始した場合、Googleを含む第三者配信事業者が、Cookie等を使用して、ユーザーが当サイトや他のサイトに過去にアクセスした情報に基づいて広告(パーソナライズ広告)を配信することがあります。このようなCookieの利用を無効にしたい場合は、Googleの広告設定ページで行うことができます。広告配信のためにGoogleがCookie等を用いて情報を扱うことはありますが、COFFEE LOGに保存した記録やメールアドレスなど本サービスが持つ情報をGoogleへ渡すことはありません。実際に広告の配信を開始した際は、本ページを改めて更新してお知らせします。</p></div></div>'));
     var ga = el('<a class="ghost-btn" href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Googleのプライバシーポリシーを見る</a>');
     root.appendChild(ga);
+    var gaSettings = el('<a class="ghost-btn" href="https://adssettings.google.com/" target="_blank" rel="noopener noreferrer">Googleの広告設定を見る</a>');
+    root.appendChild(gaSettings);
     root.appendChild(contactFooter(true));
   }
   function authErrorMessage(mode, error) {
