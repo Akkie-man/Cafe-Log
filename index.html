@@ -596,6 +596,119 @@
     55% { transform:rotate(var(--r)) scale(.93); opacity:1; filter:blur(0); }
     100% { transform:rotate(var(--r)) scale(1); opacity:1; } }
   @media (prefers-reduced-motion: reduce) { .stamp.pressed { animation:none; } }
+  /* Visual direction: quiet passport editorial. Keep the existing UI and behavior. */
+  :root {
+    --paper:#f4f0e8; --paper-2:#eae5da; --line:#cdc5b8;
+    --ink:#242722; --ink-2:#505850; --ink-3:#667067;
+    --vermilion:#a84c36; --indigo:#315766;
+    --cover:#23364d; --cover-ink:#f3e8ce;
+    --accent-bg:#eee0d6;
+  }
+  @media (prefers-color-scheme:dark) {
+    :root:not([data-theme="light"]) {
+      --paper:#1a1d1d; --paper-2:#222728; --line:#3d4645;
+      --ink:#f2efe7; --ink-2:#c3c9c2; --ink-3:#a4afa5;
+      --vermilion:#df9477; --indigo:#a5c5cb;
+      --cover:#21344b; --cover-ink:#f4e9cf; --accent-bg:#332d29;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#1a1d1d; --paper-2:#222728; --line:#3d4645;
+    --ink:#f2efe7; --ink-2:#c3c9c2; --ink-3:#a4afa5;
+    --vermilion:#df9477; --indigo:#a5c5cb;
+    --cover:#21344b; --cover-ink:#f4e9cf; --accent-bg:#332d29;
+  }
+  #app { box-shadow:none; padding-top:18px; }
+  .screen { gap:26px; animation:none; }
+  .topbar { min-height:42px; padding-bottom:8px; border-bottom:1px solid var(--line); }
+  .logo { font-size:14px; font-weight:600; letter-spacing:.18em; }
+  .account-badge,.back-btn { background:transparent; border-color:var(--line); }
+  .back-btn { border-radius:5px; }
+  .page-title { font-size:27px; letter-spacing:-.045em; }
+  .hero-intro { padding-top:16px; }
+  .hero-intro h1 { font-size:clamp(28px,7.6vw,37px); font-weight:700; letter-spacing:-.06em; margin:7px 0 8px; }
+  .hero-intro p { font-size:14px; line-height:1.85; }
+  .eyebrow { letter-spacing:.16em; }
+  .cover {
+    min-height:286px; border-radius:4px 15px 15px 4px;
+    background-color:var(--cover); box-shadow:2px 3px 0 #b7a88c, 8px 15px 27px #0003;
+    border:1px solid #a78f6b; padding:24px 23px 20px 32px;
+  }
+  .cover::before { left:11px; width:2px; background:#c9b58275; }
+  .cover-kicker { color:#d6c7a3; }
+  .cover-title { font-size:27px; letter-spacing:.035em; }
+  .cover-foot { border-top:1px solid #d9c99a66; }
+  .section-heading { align-items:center; padding-bottom:10px; border-bottom:1px solid var(--line); margin-bottom:15px; }
+  .section-heading h2 { font-size:19px; }
+  .section-heading small { font-size:10px; }
+  .daily-card {
+    border:0; border-left:3px solid var(--vermilion); border-radius:0;
+    box-shadow:none; background:var(--paper-2); padding:21px 22px;
+  }
+  .daily-card::after { display:none; }
+  .daily-name { font-size:23px; max-width:none; line-height:1.35; margin:9px 0; }
+  .daily-reason { font-size:13px; line-height:1.75; margin-bottom:18px; }
+  .daily-actions button { border-radius:5px; font-size:13px; }
+  .daily-actions button:first-child { background:var(--ink); color:var(--paper); }
+  .profile-grid { border:0; border-radius:0; border-top:1px solid var(--line); }
+  .profile-item { padding:14px 10px 13px 0; border-bottom:1px solid var(--line)!important; }
+  .profile-item:nth-child(odd) { border-right:0; }
+  .profile-item b { font-size:18px; margin-top:5px; }
+  .profile-taste { padding:13px 0 0; border:0; }
+  .row,.result { border-bottom:1px solid var(--line); padding:16px 4px; min-height:68px; }
+  .row-title { font-weight:700; }
+  .row-arrow { color:var(--ink-3); }
+  .option-btn { background:transparent; border-radius:5px; min-height:60px; }
+  .option-btn:hover { border-color:var(--vermilion); }
+  .visa { background:var(--accent-bg); border-radius:5px; }
+  .next-card { border:0; border-left:3px solid var(--vermilion); border-radius:0; padding:16px 17px; }
+  .record { border-radius:5px; background:var(--paper-2); }
+  textarea,.search-input,.record-input,.pref-btn,.primary-btn { border-radius:5px; }
+  .stamp-cell { min-height:132px; }
+  .stamp-cell::before { border-radius:1px; }
+  .bottom-nav { box-shadow:0 -8px 25px #0002; background:var(--paper); border-top:1px solid var(--line); }
+  .bottom-nav button { border-radius:4px; color:var(--ink-2); }
+  .bottom-nav button.active { background:transparent; color:var(--vermilion); position:relative; }
+  .bottom-nav button.active::before { content:""; position:absolute; top:-8px; left:27%; right:27%; height:3px; background:var(--vermilion); }
+  .account-card,.affiliate-col,.modal-card,.map-selection { border-radius:6px; }
+  .screen.passport-page { box-shadow:inset 3px 0 0 #e3dccb; }
+  @media(max-width:360px) {
+    .daily-actions { gap:6px; }
+    .daily-actions button { font-size:12px; }
+  }
+
+  /* Japanese wrapping: intentional two-line home headline, natural breaks elsewhere. */
+  body { line-break:strict; word-break:normal; }
+  .hero-intro h1 .headline-line { display:block; white-space:nowrap; }
+  .hero-intro h1 { font-size:clamp(27px,8vw,35px); letter-spacing:-.035em; }
+  .page-title,.section-heading h2,.cover-title,.row-title,.modal-card { overflow-wrap:normal; word-break:normal; }
+  .detail-name,.daily-name { overflow-wrap:anywhere; word-break:normal; }
+  @media(max-width:350px) { .hero-intro h1 { font-size:26px; } }
+
+  /* Featured origin: the next stamp is the visual anchor, not a generic card ornament. */
+  .daily-card { padding:22px 20px 18px; }
+  .daily-feature { display:grid; grid-template-columns:minmax(0,1fr) 88px; align-items:center; gap:13px; }
+  .daily-copy { min-width:0; }
+  .daily-name { font-size:clamp(20px,5.4vw,24px); margin:8px 0 3px; line-height:1.35; }
+  .daily-origin { font-size:12px; font-weight:700; color:var(--indigo); margin-bottom:9px; }
+  .daily-reason { font-size:12px; line-height:1.7; margin-bottom:0; }
+  .daily-stamp { width:88px; transform:rotate(5deg); }
+  .daily-stamp .stamp { width:100%; }
+  .daily-stamp .stamp.empty { opacity:.64; color:var(--vermilion); }
+  .daily-actions { margin-top:19px; padding-top:15px; border-top:1px solid var(--line); }
+  @media(max-width:350px) {
+    .daily-feature { grid-template-columns:minmax(0,1fr) 72px; gap:8px; }
+    .daily-stamp { width:72px; }
+  }
+
+  .first-cup { display:flex; align-items:center; justify-content:space-between; gap:14px;
+    padding:13px 0 15px; border-bottom:1px solid var(--line); }
+  .first-cup strong { display:block; font-size:14px; }
+  .first-cup span { display:block; font-size:12px; color:var(--ink-2); line-height:1.6; }
+  .first-cup button { flex:none; min-height:44px; padding:8px 12px; border:1px solid var(--ink);
+    color:var(--ink); font-size:12px; font-weight:700; }
+  @media(max-width:380px) { .first-cup { align-items:flex-start; flex-direction:column; }
+    .first-cup button { align-self:flex-start; } }
 </style>
 </head>
 <body>
@@ -1863,7 +1976,7 @@ window.COFFEE_LOG_CONFIG = {
     var title = authUser ? '⚠ 同期が必要です' :
       (configured ? 'ログインして、記録とパスポートを引き継ごう' : 'ログインによる保存は準備中です');
     var detail = authUser ? '同期が終わるまで新しい記録は保存できません。' :
-      (configured ? 'ログインすると、この端末の記録をクラウドに移せます。ログイン前はブラウザのデータを消すと失われます。' :
+      (configured ? 'ログインすると、この端末の記録をクラウドに移せます。<span style="white-space:nowrap">ログイン前</span>はブラウザのデータを消すと失われます。' :
         '今の記録はこのブラウザにだけ残ります。データを消すと失われ、別端末には引き継げません。');
     var box = el('<div class="save-status"><div><strong>' + title + '</strong><span>' + detail +
       '</span></div><button>' + (authUser ? '状態を見る' : (configured ? 'ログイン' : '保存について')) + '</button></div>');
@@ -1884,7 +1997,7 @@ window.COFFEE_LOG_CONFIG = {
   function renderStart(root) {
     root.appendChild(topbar(false));
     root.appendChild(el('<div class="hero-intro"><div class="eyebrow">YOUR COFFEE JOURNEY</div>' +
-      '<h1>一杯から、世界を旅する。</h1></div>'));
+      '<h1><span class="headline-line">一杯から、</span><span class="headline-line">世界を旅する。</span></h1></div>'));
     var p = passport(stock);
     var got = COUNTRY_KEYS.filter(function (k) { return p[k]; });
     var recent = Object.keys(p).sort(function (a, b) { return p[b].last < p[a].last ? -1 : 1; }).slice(0, 3);
@@ -1900,15 +2013,23 @@ window.COFFEE_LOG_CONFIG = {
     );
     cover.addEventListener("click", function () { navigate("passport"); });
     root.appendChild(cover);
+    if (!stock.length) {
+      var firstCup = el('<div class="first-cup"><div><strong>旅の最初の一杯は？</strong><span>飲んだ豆やドリンクを探して、記録を残せます。</span></div><button type="button">一杯を探す →</button></div>');
+      firstCup.querySelector('button').addEventListener('click', function () { navigate('registry'); });
+      root.appendChild(firstCup);
+    }
     var status1 = saveStatus(); if (status1) root.appendChild(status1);
     if (syncError) root.appendChild(el('<div class="sync-alert">' + esc(syncError) + '</div>'));
 
     var next = nextBean(), today = next ? next.bean : dailyBean();
     root.appendChild(el('<div class="section-heading"><h2>今日の一杯</h2><small>DAILY PICK</small></div>'));
-    var todayCard = el('<section class="daily-card"><div class="daily-eyebrow">TODAY’S COFFEE</div>' +
-      '<div class="daily-name">' + esc(today.name) + '</div><div class="daily-reason">' +
-      (next ? esc(next.reason) : '今日はこの産地をもう一度。') +
-      '</div><div class="daily-actions"><button class="daily-detail">この豆を見る</button><button class="daily-quiz">気分から選ぶ</button></div></section>');
+    var todayCard = el('<section class="daily-card"><div class="daily-feature"><div class="daily-copy">' +
+      '<div class="daily-eyebrow">TODAY’S COFFEE / ' + esc(COUNTRIES[today.country].en) + '</div>' +
+      '<div class="daily-name">' + esc(today.name) + '</div>' +
+      '<div class="daily-origin">' + esc(COUNTRIES[today.country].ja) + ' · ' + esc(ROAST_LABEL[today.roast]) + '</div>' +
+      '<div class="daily-reason">' + (next ? esc(next.reason) : '今日はこの産地をもう一度。') + '</div></div>' +
+      '<div class="daily-stamp">' + stampHtml(today.country, { empty: !p[today.country], sub: p[today.country] ? 'STAMPED' : 'NEXT STOP' }) + '</div></div>' +
+      '<div class="daily-actions"><button class="daily-detail">この豆を見る</button><button class="daily-quiz">気分から選ぶ</button></div></section>');
     todayCard.querySelector('.daily-detail').addEventListener('click', function () { navigate('detail', { detailId: today.id, pendingPref: null, pendingRoast: null, pendingProcess: null, pendingNote: '', pendingPlace: '', pendingDate: '' }); });
     todayCard.querySelector('.daily-quiz').addEventListener('click', function () { navigate('genreSelect'); });
     root.appendChild(todayCard);
