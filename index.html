@@ -113,6 +113,11 @@
   .row-sub { font-size: 12px; color: var(--ink-2); margin-top: 1px; }
   .row-meta { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
   .row-arrow { margin-left: auto; color: var(--ink-3); font-size: 18px; flex-shrink: 0; }
+  .guide-step { display: flex; gap: 12px; padding: 14px 2px; border-bottom: 1px dashed var(--line); }
+  .guide-step:last-child { border-bottom: none; }
+  .guide-num { flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--accent-bg); color: var(--ink-2);
+    font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .guide-step .row-title { font-size: 14px; }
   .row-body { min-width: 0; }
   .note { color: var(--ink-2); }
   .log-row { display: flex; align-items: stretch; gap: 2px; border-bottom: 1px dashed var(--line); }
@@ -490,7 +495,7 @@
   .chip { min-height:35px; }
   .tab-btn { min-height:48px; }
   .bottom-nav { position:fixed; z-index:5; bottom:0; left:50%; transform:translateX(-50%);
-    width:min(100%,480px); display:grid; grid-template-columns:repeat(4,1fr); gap:2px;
+    width:min(100%,480px); display:grid; grid-template-columns:repeat(5,1fr); gap:2px;
     padding:8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
     border-top:1px solid var(--line); background:var(--paper); box-shadow:0 -7px 24px rgba(25,36,29,.06); }
   .bottom-nav button { display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -2628,7 +2633,8 @@ window.COFFEE_LOG_CONFIG = {
   function contactFooter(hidePrivacyLink) {
     var box = el('<div class="contact-footer"><p>ご感想やお仕事のご相談、お困りごとなど、お気軽にご連絡ください。（パスワードや認証コードのご記載はご遠慮ください）</p>' +
       '<a class="ghost-btn" href="https://www.instagram.com/kotteri_kaihatsubu/" target="_blank" rel="noopener noreferrer">Instagramで問い合わせる</a>' +
-      (hidePrivacyLink ? '' : '<button class="ghost-btn privacy-link" type="button">プライバシーポリシー</button>') + '</div>');
+      (hidePrivacyLink ? '' : '<button class="ghost-btn privacy-link" type="button">プライバシーポリシー</button>') +
+      '<a class="ghost-btn" href="https://kotteri-apps.com/">こってり開発部のサイトへ</a></div>');
     if (!hidePrivacyLink) box.querySelector('.privacy-link').addEventListener('click', function () { navigate('privacy'); });
     return box;
   }
@@ -2817,13 +2823,39 @@ window.COFFEE_LOG_CONFIG = {
     root.appendChild(rows);
   }
 
+  function renderGuide(root) {
+    root.appendChild(topbar(true));
+    root.appendChild(el('<h1 class="page-title">使い方</h1>'));
+    root.appendChild(el('<div class="page-lead">COFFEE LOGの使い方を、かんたんに紹介します。</div>'));
+    var steps = [
+      ['ログインなしで、まず触ってみる', '会員登録をしなくても、診断・記録・産地パスポートはそのまま使えます。'],
+      ['気分から選ぶ', 'ホームの「気分から選ぶ」で質問に答えると、豆かドリンクのおすすめが出ます。「探す」から自分で選ぶこともできます。'],
+      ['飲んだら記録する', '「好み・ふつう・好みじゃない」の3段階で評価。豆は焙煎度・精製方法も選べます。'],
+      ['産地パスポートが育つ', '豆を記録すると、その産地の国にスタンプが押されます。「パスポート」で世界地図を見られます。'],
+      ['バッジを集める', '記録の内容に応じてバッジが増えます。「達成バッジを見る」から確認できます。'],
+      ['シェアする', '記録・パスポート・バッジには、それぞれシェアするボタンがあります。'],
+      ['ログインすると記録を引き継げる', 'クラウドに保存され、別端末でも続きから使えます。']
+    ];
+    var list = el('<div style="border-top:1px solid var(--line);"></div>');
+    steps.forEach(function (s, i) {
+      list.appendChild(el('<div class="guide-step"><div class="guide-num">' + (i + 1) + '</div><div class="row-body"><div class="row-title">' + s[0] +
+        '</div><div class="row-sub">' + s[1] + '</div></div></div>'));
+    });
+    root.appendChild(list);
+    var more = el('<a class="passport-share" href="https://kotteri-apps.com/coffee-log-guide.html" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">より詳しい使い方を見る</a>');
+    root.appendChild(more);
+    var site = el('<a class="ghost-btn" href="https://kotteri-apps.com/" target="_blank" rel="noopener noreferrer" style="display:block;text-align:center;margin-top:14px;">こってり開発部のサイトへ</a>');
+    root.appendChild(site);
+  }
+
   function renderBottomNav() {
     var nav = el('<nav class="bottom-nav" aria-label="メインメニュー"></nav>');
     var icons = {
       start: '<path d="m3 10 9-7 9 7v10H3z"/><path d="M9 20v-7h6v7"/>',
       registry: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/>',
       passport: '<path d="M4 4.5c3-1 5.5-.7 8 1 2.5-1.7 5-2 8-1v15c-3-1-5.5-.7-8 1-2.5-1.7-5-2-8-1z"/><path d="M12 5.5v15"/><circle cx="16" cy="12" r="2.5"/>',
-      stock: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>'
+      stock: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
+      guide: '<circle cx="12" cy="12" r="9"/><path d="M9.3 9.2a2.7 2.7 0 1 1 3.8 2.5c-.9.4-1.1 1-1.1 1.9"/><path d="M12 17.2h.01"/>'
     };
     var section = state.screen;
     if (['genreSelect', 'question', 'results'].indexOf(section) !== -1) section = 'registry';
@@ -2838,7 +2870,8 @@ window.COFFEE_LOG_CONFIG = {
       { screen: 'start', label: 'ホーム' },
       { screen: 'registry', label: '探す' },
       { screen: 'passport', label: 'パスポート' },
-      { screen: 'stock', label: '記録' }
+      { screen: 'stock', label: '記録' },
+      { screen: 'guide', label: '使い方' }
     ].forEach(function (item) {
       var active = section === item.screen;
       var b = el('<button class="' + (active ? 'active' : '') + '"' + (active ? ' aria-current="page"' : '') +
@@ -2854,7 +2887,7 @@ window.COFFEE_LOG_CONFIG = {
   }
 
   var SCREENS = { start: renderStart, passport: renderPassport, map: renderMap, country: renderCountry, genreSelect: renderGenreSelect,
-    question: renderQuestion, results: renderResults, detail: renderDetail, registry: renderRegistry, stock: renderStock, badges: renderBadges, account: renderAccount, newPassword: renderNewPassword, privacy: renderPrivacy };
+    question: renderQuestion, results: renderResults, detail: renderDetail, registry: renderRegistry, stock: renderStock, badges: renderBadges, account: renderAccount, newPassword: renderNewPassword, privacy: renderPrivacy, guide: renderGuide };
   function render() {
     var app = document.getElementById("app");
     app.innerHTML = "";
