@@ -6,8 +6,9 @@
 <meta name="google-adsense-account" content="ca-pub-4960959858706803">
 <!-- Google AdSense: 広告の読み込みスクリプト。全体で1回だけ読み込む。
      自動広告は使わない。広告はアプリ内の指定した広告枠(ADSENSE_CONFIG / adBegin 参照)にだけ表示する。
-     読み込めない場合(広告ブロック等)は html に ads-blocked を付け、広告枠を畳む。アプリの操作には影響しない。 -->
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4960959858706803" crossorigin="anonymous" onerror="document.documentElement.classList.add('ads-blocked')"></script>
+     読み込めない場合(広告ブロック等)は、フラグを立てて広告枠を隠すだけ。<html> や <body> には何も付けない
+     (コンテンツブロッカーの「広告っぽい名前を隠す」規則でページ全体が消えるのを避けるため)。アプリの操作には影響しない。 -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4960959858706803" crossorigin="anonymous" onerror="window.__adLoadFailed=1;try{window.__adFailed&&window.__adFailed()}catch(e){}"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>COFFEE LOG | 一杯から世界を旅する</title>
 <meta name="robots" content="index,follow">
@@ -263,11 +264,13 @@
   .affiliate-name { font-size: 13px; font-weight: 700; margin-bottom: 4px; overflow-wrap: break-word; }
   .affiliate-note { font-size: 11px; color: var(--ink-2); margin-bottom: 10px; line-height: 1.6; }
   .affiliate-link { margin-top: auto; text-align: center; }
-  .adsense-section { margin-top: 20px; padding-top: 12px; border-top: 1px dashed var(--line); text-align: center;
-    overflow: hidden; min-width: 0; max-width: 100%; }
+  /* 広告が実際に入る(is-filled)までは、ラベル・罫線・余白を出さない(空の「広告」枠を見せない) */
+  .adsense-section { text-align: center; overflow: hidden; min-width: 0; max-width: 100%; }
+  .adsense-section:not(.is-filled) .adsense-tag { display: none; }
+  .adsense-section.is-filled { margin-top: 20px; padding-top: 12px; border-top: 1px dashed var(--line); }
   .adsense-section .adsbygoogle { display: block; width: 100%; }
-  .adsense-section[data-placement="detail"] { margin-bottom: 40px; } /* 記録フォーム・保存ボタンとの間隔 */
-  .adsense-section.is-off, .ads-blocked .adsense-section { display: none; } /* 未配信・読み込み失敗・表示対象なし */
+  .adsense-section.is-filled[data-placement="detail"] { margin-bottom: 40px; } /* 記録フォーム・保存ボタンとの間隔 */
+  .adsense-section.is-off { display: none; } /* 未配信・読み込み失敗・表示対象なし */
   .adsense-tag { font-size: 9px; font-weight: 700; color: var(--ink-3); border: 1px solid var(--ink-3);
     border-radius: 4px; padding: 1px 5px; display: inline-block; margin-bottom: 8px; }
   .modal-confirm.danger { background: var(--vermilion); color: var(--paper); border-color: var(--vermilion); }
@@ -1786,6 +1789,7 @@ window.COFFEE_LOG_CONFIG = {
      DOMから外さずに保持する(外すと広告が消える・再リクエストされるため)。
      広告リクエスト(push)は枠ごとに1回だけ。画面(key)が変わったときだけ新しい枠を作る。 */
   var adCtl = { key: null, placement: null, box: null, ins: null, requested: false, sizeObs: null, statusObs: null, polls: 0 };
+  window.__adFailed = function () { if (adCtl.box) adCtl.box.classList.add('is-off'); };   // head のスクリプトが後から失敗した場合
   function adDispose() {
     if (adCtl.sizeObs) adCtl.sizeObs.disconnect();
     if (adCtl.statusObs) adCtl.statusObs.disconnect();
@@ -1805,16 +1809,17 @@ window.COFFEE_LOG_CONFIG = {
     ins.setAttribute('data-ad-format', 'auto');
     // 画面の余白の外まで広げない(本文・固定メニューに重ならないようにする)
     ins.setAttribute('data-full-width-responsive', 'false');
+    if (window.__adLoadFailed) box.classList.add('is-off');   // 広告スクリプトが読み込めなかった
     adCtl.key = t.key; adCtl.placement = t.placement; adCtl.box = box; adCtl.ins = ins;
     return true;
   }
   // 各画面の「広告を置く位置」に目印を置く。render() が実際の広告枠に差し替える。
   function placeAd(root) {
-    if (adCtl.box) root.appendChild(el('<div data-ad-anchor style="display:none"></div>'));
+    if (adCtl.box) root.appendChild(el('<div data-pos-mark style="display:none"></div>'));
   }
   // 検索結果が0件のときなど、広告だけが残る状態を避ける(広告枠は保持したまま隠す)
   function adSetEligible(ok) {
-    if (adCtl.box) adCtl.box.classList.toggle('is-off', !ok || adCtl.box.getAttribute('data-unfilled') === '1');
+    if (adCtl.box) adCtl.box.classList.toggle('is-off', !ok || !!window.__adLoadFailed || adCtl.box.getAttribute('data-unfilled') === '1');
   }
   function adTryRequest() {
     var c = adCtl;
@@ -1826,7 +1831,9 @@ window.COFFEE_LOG_CONFIG = {
     if (c.sizeObs) { c.sizeObs.disconnect(); c.sizeObs = null; }
     try {
       c.statusObs = new MutationObserver(function () {
-        if (c.ins.getAttribute('data-ad-status') === 'unfilled') { c.box.setAttribute('data-unfilled', '1'); c.box.classList.add('is-off'); }
+        var st = c.ins.getAttribute('data-ad-status');
+        if (st === 'unfilled') { c.box.setAttribute('data-unfilled', '1'); c.box.classList.add('is-off'); }
+        else if (st === 'filled') c.box.classList.add('is-filled');   // 広告が入ってからラベルを出す
       });
       c.statusObs.observe(c.ins, { attributes: true, attributeFilter: ['data-ad-status'] });
     } catch (e) {}
@@ -1848,7 +1855,7 @@ window.COFFEE_LOG_CONFIG = {
   // 同じ画面の再描画: 広告ノードを動かさず、その前後だけ新しい内容に入れ替える。
   function adMerge(oldRoot, newRoot, live) {
     var anchor = null, n;
-    for (n = newRoot.firstChild; n; n = n.nextSibling) if (n.nodeType === 1 && n.hasAttribute('data-ad-anchor')) { anchor = n; break; }
+    for (n = newRoot.firstChild; n; n = n.nextSibling) if (n.nodeType === 1 && n.hasAttribute('data-pos-mark')) { anchor = n; break; }
     if (!anchor) return false;
     var before = [], after = [];
     for (n = newRoot.firstChild; n && n !== anchor; n = n.nextSibling) before.push(n);
@@ -3133,7 +3140,7 @@ window.COFFEE_LOG_CONFIG = {
       app.removeChild(oldRoot); adDispose(); hasAd = false;   // 想定外: 広告なしで続行する
     }
     if (hasAd && !live) {
-      var anchor = root.querySelector('[data-ad-anchor]');
+      var anchor = root.querySelector('[data-pos-mark]');
       if (anchor) root.replaceChild(adCtl.box, anchor);
     }
     app.appendChild(renderBottomNav());
